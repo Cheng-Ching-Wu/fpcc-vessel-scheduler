@@ -28,10 +28,9 @@ export default {
     return {
       isCollapsed: false,
       navItems: [
-        { name: 'home', label: 'Home', path: '/', exact: true },
+        { name: 'PlanGantt', label: 'Plan Gantt', path: '/' },
         { name: 'FrappeGantt', label: 'Frappe Gantt', path: '/FrappeGantt' },
         { name: 'DhtmlxGantt', label: 'Dhtmlx Gantt', path: '/DhtmlxGantt' },
-        { name: 'PlanGantt', label: 'Plan Gantt', path: '/PlanGantt' }
       ]
     }
   }

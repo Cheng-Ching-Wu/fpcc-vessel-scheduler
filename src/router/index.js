@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HelloWorld from '@/components/HelloWorld.vue'
+// import HelloWorld from '@/components/HelloWorld.vue'
 import FrappeGantt from '@/components/FrappeGantt.vue'
 import DhtmlxGantt from '@/components/dhtmlxGantt.vue'
 import PlanGantt from '@/components/PlanGantt.vue'
@@ -8,10 +8,15 @@ import PlanGantt from '@/components/PlanGantt.vue'
 Vue.use(VueRouter)
 
 const routes = [
+  // {
+  //   path: '/',
+  //   name: 'Home',
+  //   component: HelloWorld
+  // },
   {
     path: '/',
-    name: 'Home',
-    component: HelloWorld
+    name: 'PlanGantt',
+    component: PlanGantt
   },
   {
     path: '/FrappeGantt',
@@ -23,11 +28,6 @@ const routes = [
     name: 'DhtmlxGantt',
     component: DhtmlxGantt
   },
-  {
-    path: '/PlanGantt',
-    name: 'PlanGantt',
-    component: PlanGantt
-  }
 ]
 
 const router = new VueRouter({
