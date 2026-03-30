@@ -212,15 +212,44 @@ export default {
 
     // 根據目前 ACTIVITIES 重新計算各 task 的 row_height
         const updateRowHeights = () => {
+            const wsMs = gantt.config.start_date.getTime()
+            const weMs = gantt.config.end_date.getTime()
+
+            // Step 1：先把所有子項重置回 BASE_ROW_H，
+            // 避免「非 ACTIVITIES 的子項」（如 s1_maintenance）上一週被設為 1 後沒機會還原
+            VESSELS.forEach(({ ids }) => {
+                ids.forEach(id => {
+                    try { gantt.getTask(id).row_height = BASE_ROW_H } catch (e) { /* ignore */ }
+                })
+            })
+
+            // Step 2：依當週可見 activities 調整分道較多的子項列高
             Object.keys(ACTIVITIES).forEach(taskId => {
                 try {
                     const task = gantt.getTask(taskId)
-                    const acts = ACTIVITIES[taskId] || []
-                    const totalLanes = acts.length
-                        ? Math.max(...acts.map(a => (a._lane ?? 0)), 0) + 1
+                    const visActs = (ACTIVITIES[taskId] || []).filter(a =>
+                        a.end.getTime() > wsMs && a.start.getTime() < weMs
+                    )
+                    const totalLanes = visActs.length
+                        ? Math.max(...visActs.map(a => (a._lane ?? 0)), 0) + 1
                         : 1
                     task.row_height = totalLanes * BASE_ROW_H
                 } catch (e) { /* task 尚未存在時忽略 */ }
+            })
+
+            // Step 3：若整艘船該週無資料，所有子項設為 1（非 0 避免 falsy）
+            // 實際視覺隱藏由 onGanttRender 的 CSS class 完成
+            VESSELS.forEach(({ ids }) => {
+                const hasData = ids.some(id =>
+                    (ACTIVITIES[id] || []).some(a =>
+                        a.end.getTime() > wsMs && a.start.getTime() < weMs
+                    )
+                )
+                if (!hasData) {
+                    ids.forEach(id => {
+                        try { gantt.getTask(id).row_height = 1 } catch (e) { /* ignore */ }
+                    })
+                }
             })
         }
 
@@ -318,10 +347,14 @@ export default {
 
         // ── 在 onGanttRender 手動繪製多 bar + vessel overlay ──
         gantt.attachEvent('onGanttRender', () => {
-            // ── Vessel label overlay（模擬 rowspan）──
-            document.querySelectorAll('.vessel-label-overlay').forEach(el => el.remove())
+            const wsMs = gantt.config.start_date.getTime()
+            const weMs = gantt.config.end_date.getTime()
+
+            // ── Vessel label overlay（模擬 rowspan）+ 暫無資料 overlay ──
+            document.querySelectorAll('.vessel-label-overlay, .vessel-no-data-overlay').forEach(el => el.remove())
             const gridData = document.querySelector('.gantt_grid_data')
             if (gridData) {
+
                 VESSELS.forEach(({ name, ids }) => {
                     const firstIdx = gantt.getTaskIndex(ids[0])
                     if (firstIdx === -1) return
@@ -356,8 +389,31 @@ export default {
                         boxSizing:      'border-box',
                     })
                     gridData.appendChild(el)
+
+                    // 當週無資料時，整個項目欄覆蓋「暫無資料」（取代 vessel label）
+                    const hasData = ids.some(id =>
+                        (ACTIVITIES[id] || []).some(a =>
+                            a.end.getTime() > wsMs && a.start.getTime() < weMs
+                        )
+                    )
+                    // 無資料時移除 vessel-label-overlay（列已被 CSS 完全隱藏）
+                    if (!hasData) el.remove()
                 })
             }
+
+            // ── 無資料船的所有 DOM 列：用 CSS class 隱藏，不碰 gantt 自己的 inline height ──
+            VESSELS.forEach(({ ids }) => {
+                const hasData = ids.some(id =>
+                    (ACTIVITIES[id] || []).some(a =>
+                        a.end.getTime() > wsMs && a.start.getTime() < weMs
+                    )
+                )
+                ids.forEach(id => {
+                    document.querySelectorAll(`[data-task-id="${id}"]`).forEach(row => {
+                        row.classList.toggle('gantt-row-hidden', !hasData)
+                    })
+                })
+            })
 
             // ── 手動繪製多 task bar（取代 addTaskLayer）──
             document.querySelectorAll('.custom-act-bar').forEach(el => el.remove())
@@ -413,32 +469,14 @@ export default {
                     bar.className = 'custom-act-bar'
                     if (isLeftClipped)  bar.classList.add('bar-left-clipped')
                     if (isRightClipped) bar.classList.add('bar-right-clipped')
-                    const tl = isLeftClipped  ? '0' : '2px'
-                    const tr = isRightClipped ? '0' : '2px'
                     bar.style.cssText = `
-                        position:absolute;
                         left:${left}px;
                         width:${Math.max(width, 30)}px;
                         top:${barTop}px;
                         height:${barHeight}px;
                         background:${typeColor};
                         border:2px solid ${typeBorder};
-                        ${isLeftClipped  ? 'border-left:none;'  : ''}
-                        ${isRightClipped ? 'border-right:none;' : ''}
-                        border-radius:${tl} ${tr} ${tr} ${tl};
                         color:${typeBorder};
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        font-size:1.15em;
-                        font-weight: 900;
-                        overflow:visible;
-                        white-space:nowrap;
-                        box-sizing:border-box;
-                        cursor:grab;
-                        user-select:none;
-                        z-index:5;
-                        transition:box-shadow 0.12s;
                     `
                     // 儲存邊框色，re-render 後若此 act 仍被 focus 就還原樣式
                     bar.dataset.borderColor = typeBorder
@@ -479,23 +517,23 @@ export default {
                         bar.appendChild(arrow)
                     }
 
-                    // 左側縮放把手（裁切側不加，防止資料錯誤）
+                    // 左側縮放把手（跨週裁切側仍加，可調整週外時間）
                     const lHandle = document.createElement('div')
                     lHandle.className = 'bar-resize-handle bar-resize-left'
                     lHandle.style.cssText = `
                         position:absolute; left:0; top:0; bottom:0;
-                        width:8px; cursor:w-resize; z-index:1;
+                        width:8px; cursor:w-resize; z-index:7;
                     `
-                    if (!isLeftClipped) bar.appendChild(lHandle)
+                    bar.appendChild(lHandle)
 
-                    // 右側縮放把手（裁切側不加，防止資料錯誤）
+                    // 右側縮放把手（跨週裁切側仍加，可調整週外時間）
                     const rHandle = document.createElement('div')
                     rHandle.className = 'bar-resize-handle bar-resize-right'
                     rHandle.style.cssText = `
                         position:absolute; right:0; top:0; bottom:0;
-                        width:8px; cursor:e-resize; z-index:1;
+                        width:8px; cursor:e-resize; z-index:7;
                     `
-                    if (!isRightClipped) bar.appendChild(rHandle)
+                    bar.appendChild(rHandle)
 
                     // ── Hover tooltip ──
                     bar.addEventListener('mouseenter', () => {
@@ -597,10 +635,16 @@ export default {
                                     newEnd   = new Date(ns + duration)
                                 } else if (type === 'resize-right') {
                                     newStart = origStart
-                                    newEnd   = new Date(snapMs(timelineStart + (curLeft + curW) * msPerPx))
+                                    // 右裁切：以 origEnd 為基準加上視覺位移量
+                                    newEnd = isRightClipped
+                                        ? new Date(snapMs(origEnd.getTime() + (curW - startW) * msPerPx))
+                                        : new Date(snapMs(timelineStart + (curLeft + curW) * msPerPx))
                                 } else if (type === 'resize-left') {
-                                    newStart = new Date(snapMs(timelineStart + curLeft * msPerPx))
-                                    newEnd   = origEnd
+                                    // 左裁切：以 origStart 為基準加上視覺位移量（curLeft 從 0 起算，即相對 weekStart 的偏移）
+                                    newStart = isLeftClipped
+                                        ? new Date(snapMs(origStart.getTime() + curLeft * msPerPx))
+                                        : new Date(snapMs(timelineStart + curLeft * msPerPx))
+                                    newEnd = origEnd
                                 }
 
                                 // 使用 bar 的 viewport 座標定位（position:fixed）
@@ -710,12 +754,16 @@ export default {
                                     updateRowHeights()
                                     gantt.render()
                                 } else if (type === 'resize-right') {
-                                    act.end = new Date(snapMs(timelineStart + (finalLeft + finalW) * msPerPx))
+                                    act.end = isRightClipped
+                                        ? new Date(snapMs(origEnd.getTime() + (finalW - startW) * msPerPx))
+                                        : new Date(snapMs(timelineStart + (finalLeft + finalW) * msPerPx))
                                     assignLanes(ACTIVITIES[taskId], act)
                                     updateRowHeights()
                                     gantt.render()
                                 } else if (type === 'resize-left') {
-                                    act.start = new Date(snapMs(timelineStart + finalLeft * msPerPx))
+                                    act.start = isLeftClipped
+                                        ? new Date(snapMs(origStart.getTime() + finalLeft * msPerPx))
+                                        : new Date(snapMs(timelineStart + finalLeft * msPerPx))
                                     assignLanes(ACTIVITIES[taskId], act)
                                     updateRowHeights()
                                     gantt.render()
@@ -736,8 +784,8 @@ export default {
                     }
 
                     attachDrag(bar,     'move')
-                    if (!isLeftClipped)  attachDrag(lHandle, 'resize-left')
-                    if (!isRightClipped) attachDrag(rHandle, 'resize-right')
+                    attachDrag(lHandle, 'resize-left')
+                    attachDrag(rHandle, 'resize-right')
 
                     dataArea.appendChild(bar)
                 })
@@ -788,6 +836,9 @@ export default {
         // parse 後再同步一次列高，確保 grid 與 timeline 都套用到最新 row_height
         updateRowHeights()
         gantt.render()
+
+        // 暴露給 methods（_applyWeek 切週時需要重算列高）
+        this._updateRowHeights = updateRowHeights
 
         // ── 拖拉平移時間軸（點擊空白區域才啟動）──
         let lastX = 0, lastY = 0
@@ -873,6 +924,8 @@ export default {
                     console.log(`Task ${taskId} not found when applying week change`)
                 }
             })
+            // 切週後重算列高，避免保留上一週多分道撐高的 row_height
+            if (this._updateRowHeights) this._updateRowHeights()
             gantt.render()
         }
     }
@@ -968,6 +1021,14 @@ export default {
 
 .hidden-bar { display: none !important; }
 
+:deep(.gantt-row-hidden) {
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    border-bottom: none !important;
+    padding: 0 !important;
+}
+
 /* 資料列文字向右偏移，避免被 vessel overlay 蓋住 */
 .plan-gantt .gantt_grid_data .gantt_row .gantt_cell {
     padding-left: 52px !important;
@@ -983,14 +1044,31 @@ export default {
     border-left: 1px solid #888 !important;
 }
 
-/* 跨週裁切指示器（左/右邊框移除，讓箭頭 DOM 元素貼齊邊緣） */
-.custom-act-bar.bar-left-clipped {
+:deep(.custom-act-bar) {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15em;
+    font-weight: 900;
+    overflow: visible;
+    white-space: nowrap;
+    box-sizing: border-box;
+    cursor: grab;
+    user-select: none;
+    z-index: 5;
+    border-radius: 5px;
+    transition: box-shadow 0.12s;
+}
+
+/* 跨週裁切指示器：裁切側移除邊框與圓角 */
+:deep(.custom-act-bar.bar-left-clipped) {
     border-left: none;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
 }
 
-.custom-act-bar.bar-right-clipped {
+:deep(.custom-act-bar.bar-right-clipped) {
     border-right: none;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
