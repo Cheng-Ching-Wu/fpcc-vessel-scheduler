@@ -153,7 +153,7 @@ export default {
                 { key: 'transfer', label: '駁油', color: 'rgba(178,71,255,0.30)', border: '#b247ff' },
                 { key: 'maintenance', label: '維修', color: 'rgba(230,140,0,0.30)', border: '#e68c00' },
                 { key: 'breakdown', label: '故障', color: 'rgba(185,0,18,0.30)', border: '#b90012' },
-                { key: 'other', label: '其他', color: 'rgba(213,213,213,0.50)', border: '#d0d0d0' },
+                { key: 'other', label: '其他', color: 'rgba(192,192,192,0.30)', border: '#b0b0b0' },
                 { key: 'transport', label: '載運', color: 'rgba(0,170,180,0.30)', border: '#00aab4' },
                 { key: 'patrol', label: '警戒', color: 'rgba(255,0,26,0.30)', border: '#ff001a' },
             ]
@@ -281,7 +281,7 @@ export default {
         // 將 tooltip 限制在視窗內，避免超出螢幕
         const positionTooltip = (tooltipEl, anchorRect, text) => {
             const pad = 8
-            tooltipEl.textContent = text
+            tooltipEl.innerHTML = text
             tooltipEl.style.transform = 'none'
             tooltipEl.style.visibility = 'hidden'
             tooltipEl.style.display = 'block'
@@ -310,7 +310,7 @@ export default {
             font-size: 16px;
             padding:6px 12px;
             border-radius:4px;
-            white-space:nowrap;
+            white-space:pre;
             pointer-events:none;
             z-index:9998;
             box-shadow:0 2px 6px rgba(0,0,0,0.28);
@@ -538,7 +538,7 @@ export default {
                     // ── Hover tooltip ──
                     bar.addEventListener('mouseenter', () => {
                         const r = bar.getBoundingClientRect()
-                        positionTooltip(hoverTooltip, r, `${act.label}  ${fmtDt(act.start)} ~ ${fmtDt(act.end)}`)
+                        positionTooltip(hoverTooltip, r, `項目: ${legendItem?.label ?? actType}  ${act.label}\n${fmtDt(act.start)} ~ ${fmtDt(act.end)}`)
                     })
                     bar.addEventListener('mouseleave', () => {
                         hoverTooltip.style.display = 'none'
@@ -607,7 +607,7 @@ export default {
                                 font-size:16px;
                                 padding:6px 12px;
                                 border-radius:4px;
-                                white-space:nowrap;
+                                white-space:pre;
                                 pointer-events:none;
                                 z-index:9999;
                                 box-shadow:0 2px 6px rgba(0,0,0,0.28);
@@ -630,7 +630,9 @@ export default {
                                 let newStart, newEnd
 
                                 if (type === 'move') {
-                                    const ns = snapMs(timelineStart + curLeft * msPerPx)
+                                    const ns = isLeftClipped
+                                        ? snapMs(origStart.getTime() + curLeft * msPerPx)
+                                        : snapMs(timelineStart + curLeft * msPerPx)
                                     newStart = new Date(ns)
                                     newEnd   = new Date(ns + duration)
                                 } else if (type === 'resize-right') {
@@ -649,7 +651,7 @@ export default {
 
                                 // 使用 bar 的 viewport 座標定位（position:fixed）
                                 const barRect = bar.getBoundingClientRect()
-                                positionTooltip(tooltip, barRect, `${act.label}  ${fmtDt(newStart)} ~ ${fmtDt(newEnd)}`)
+                                positionTooltip(tooltip, barRect, `項目: ${legendItem?.label ?? actType}  ${act.label}\n${fmtDt(newStart)} ~ ${fmtDt(newEnd)}`)
                             }
 
                             const onMove = ev => {
@@ -710,7 +712,9 @@ export default {
                                 }
                                 
                                 if (type === 'move') {
-                                    const ns = snapMs(timelineStart + finalLeft * msPerPx)
+                                    const ns = isLeftClipped
+                                        ? snapMs(origStart.getTime() + finalLeft * msPerPx)
+                                        : snapMs(timelineStart + finalLeft * msPerPx)
                                     act.start = new Date(ns)
                                     act.end   = new Date(ns + duration)
 
