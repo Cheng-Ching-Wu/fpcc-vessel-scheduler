@@ -1,5 +1,5 @@
 <template>
-    <div class="plan-gantt-wrapper">
+    <div class="plan-gantt-wrapper" @click="hideContextMenu">
         <div class="plan-gantt-legend">
             <div v-for="item in legendData" :key="item.key" class="legend-item">
                 <div 
@@ -20,9 +20,66 @@
             <a role="button" class="nav-btn" @click="nextWeek">&#8250;</a>
             <div class="nav-spacer"></div>
             <a role="button" class="nav-btn today-btn" @click="goToday">今天</a>
+            <a role="button" class="nav-btn add-btn" @click.stop="openAddModal">＋ 新增</a>
         </div>
         <div class="plan-gantt">
             <div ref="ganttEl" style="width:100%;"></div>
+        </div>
+
+        <!-- 右鍵選單 -->
+        <div v-if="contextMenu.visible" class="context-menu"
+            :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
+            @click.stop>
+            <div class="context-menu-item" @click="openEditModal(contextMenu.act, contextMenu.taskId); hideContextMenu()">
+                ✎ 編輯
+            </div>
+            <div class="context-menu-item context-menu-item--danger" @click="deleteAct(contextMenu.act, contextMenu.taskId); hideContextMenu()">
+                🗑 刪除
+            </div>
+        </div>
+
+        <!-- 新增 / 編輯彈窗 -->
+        <div v-if="modalVisible" class="modal-overlay" @click.self="closeModal">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <span>{{ modalMode === 'add' ? '新增項目' : '編輯項目' }}</span>
+                    <button class="modal-close" @click="closeModal">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row">
+                        <label>船隻</label>
+                        <select v-model="modalForm.vessel" @change="modalForm.type = ''">
+                            <option value="">請選擇</option>
+                            <option v-for="v in vesselOptions" :key="v.prefix" :value="v.prefix">{{ v.name }}</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>項目類型</label>
+                        <select v-model="modalForm.type" :disabled="!modalForm.vessel">
+                            <option value="">請選擇</option>
+                            <option v-for="t in availableTypes" :key="t.key" :value="t.key">{{ t.label }}</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>標籤</label>
+                        <input type="text" v-model="modalForm.label" placeholder="請輸入標籤" />
+                    </div>
+                    <div class="form-row">
+                        <label>開始時間</label>
+                        <input type="date" v-model="modalForm.startDate" />
+                        <input type="time" v-model="modalForm.startTime" step="1800" />
+                    </div>
+                    <div class="form-row">
+                        <label>結束時間</label>
+                        <input type="date" v-model="modalForm.endDate" />
+                        <input type="time" v-model="modalForm.endTime" step="1800" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel" @click="closeModal">取消</button>
+                    <button class="btn-save" @click="saveModal">儲存</button>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -148,6 +205,16 @@ export default {
     data() {
         return {
             currentWeekStart: null,
+            modalVisible: false,
+            modalMode: 'add',
+            modalForm: {
+                vessel: '', type: '', label: '',
+                startDate: '', startTime: '00:00',
+                endDate: '',   endTime: '00:00',
+            },
+            editTaskId: null,
+            editAct: null,
+            contextMenu: { visible: false, x: 0, y: 0, act: null, taskId: null },
             legendData: [
                 { key: 'bunkering', label: '補油', color: 'rgba(0,155,255,0.30)', border: '#009bff' },
                 { key: 'transfer', label: '駁油', color: 'rgba(178,71,255,0.30)', border: '#b247ff' },
@@ -544,6 +611,14 @@ export default {
                         hoverTooltip.style.display = 'none'
                     })
 
+                    // ── 右鍵選單 ──
+                    bar.addEventListener('contextmenu', e => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        hoverTooltip.style.display = 'none'
+                        this.openContextMenu(e, act, taskId)
+                    })
+
                     // 通用拖曳邏輯
                     const attachDrag = (el, type) => {
                         el.addEventListener('pointerdown', e => {
@@ -881,6 +956,21 @@ export default {
         if (this._hoverTooltip?.parentNode) this._hoverTooltip.parentNode.removeChild(this._hoverTooltip)
     },
     computed: {
+        vesselOptions() {
+            return [
+                { prefix: 's1', name: '油駁船1', types: ['bunkering','transfer','maintenance','breakdown','other'] },
+                { prefix: 's2', name: '油駁船2', types: ['bunkering','transfer','maintenance','breakdown','other'] },
+                { prefix: 's3', name: '工作船3', types: ['transport','patrol','maintenance','breakdown','other'] },
+            ]
+        },
+        availableTypes() {
+            const vessel = this.vesselOptions.find(v => v.prefix === this.modalForm.vessel)
+            if (!vessel) return []
+            return vessel.types.map(key => ({
+                key,
+                label: this.legendData.find(l => l.key === key)?.label ?? key
+            }))
+        },
         weekLabel() {
             if (!this.currentWeekStart) return ''
             // ISO 週數計算
@@ -931,7 +1021,84 @@ export default {
             // 切週後重算列高，避免保留上一週多分道撐高的 row_height
             if (this._updateRowHeights) this._updateRowHeights()
             gantt.render()
-        }
+        },
+        openAddModal() {
+            this.modalMode = 'add'
+            this.modalForm = { vessel: '', type: '', label: '', startDate: '', startTime: '00:00', endDate: '', endTime: '00:00' }
+            this.editTaskId = null
+            this.editAct = null
+            this.modalVisible = true
+        },
+        openEditModal(act, taskId) {
+            this.modalMode = 'edit'
+            this.editTaskId = taskId
+            this.editAct = act
+            const parts = taskId.match(/^(s\d+)_(.+)$/)
+            const vessel = parts ? parts[1] : ''
+            const type   = parts ? parts[2] : ''
+            const pad = n => String(n).padStart(2, '0')
+            this.modalForm = {
+                vessel, type,
+                label:     act.label,
+                startDate: `${act.start.getFullYear()}-${pad(act.start.getMonth()+1)}-${pad(act.start.getDate())}`,
+                startTime: `${pad(act.start.getHours())}:${pad(act.start.getMinutes())}`,
+                endDate:   `${act.end.getFullYear()}-${pad(act.end.getMonth()+1)}-${pad(act.end.getDate())}`,
+                endTime:   `${pad(act.end.getHours())}:${pad(act.end.getMinutes())}`,
+            }
+            this.modalVisible = true
+        },
+        closeModal() {
+            this.modalVisible = false
+        },
+        saveModal() {
+            const f = this.modalForm
+            if (!f.vessel || !f.type || !f.label || !f.startDate || !f.startTime || !f.endDate || !f.endTime) {
+                alert('請填寫所有欄位')
+                return
+            }
+            const newStart = new Date(`${f.startDate}T${f.startTime}`)
+            const newEnd   = new Date(`${f.endDate}T${f.endTime}`)
+            if (isNaN(newStart) || isNaN(newEnd)) { alert('時間格式錯誤'); return }
+            if (newEnd <= newStart) { alert('結束時間必須晚於開始時間'); return }
+            const newTaskId = `${f.vessel}_${f.type}`
+            if (this.modalMode === 'add') {
+                const act = { label: f.label, start: newStart, end: newEnd }
+                if (!ACTIVITIES[newTaskId]) ACTIVITIES[newTaskId] = []
+                ACTIVITIES[newTaskId].push(act)
+                assignLanes(ACTIVITIES[newTaskId])
+            } else {
+                const oldTaskId = this.editTaskId
+                const act = this.editAct
+                if (oldTaskId !== newTaskId) {
+                    const oldArr = ACTIVITIES[oldTaskId]
+                    if (oldArr) { const i = oldArr.indexOf(act); if (i !== -1) oldArr.splice(i, 1) }
+                    act.label = f.label; act.start = newStart; act.end = newEnd
+                    if (!ACTIVITIES[newTaskId]) ACTIVITIES[newTaskId] = []
+                    ACTIVITIES[newTaskId].push(act)
+                    if (ACTIVITIES[oldTaskId]?.length) assignLanes(ACTIVITIES[oldTaskId])
+                    assignLanes(ACTIVITIES[newTaskId])
+                } else {
+                    act.label = f.label; act.start = newStart; act.end = newEnd
+                    assignLanes(ACTIVITIES[newTaskId], act)
+                }
+            }
+            if (this._updateRowHeights) this._updateRowHeights()
+            gantt.render()
+            this.closeModal()
+        },
+        openContextMenu(e, act, taskId) {
+            this.contextMenu = { visible: true, x: e.clientX, y: e.clientY, act, taskId }
+        },
+        hideContextMenu() {
+            this.contextMenu.visible = false
+        },
+        deleteAct(act, taskId) {
+            const arr = ACTIVITIES[taskId]
+            if (arr) { const i = arr.indexOf(act); if (i !== -1) arr.splice(i, 1) }
+            if (ACTIVITIES[taskId]?.length) assignLanes(ACTIVITIES[taskId])
+            if (this._updateRowHeights) this._updateRowHeights()
+            gantt.render()
+        },
     }
 }
 </script>
@@ -1076,5 +1243,132 @@ export default {
     border-right: none;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+}
+
+/* ── 右鍵選單 ── */
+.context-menu {
+    position: fixed;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 10000;
+    min-width: 120px;
+    overflow: hidden;
+    padding: 4px 0;
+}
+.context-menu-item {
+    padding: 9px 18px;
+    font-size: 0.9375em;
+    cursor: pointer;
+    white-space: nowrap;
+    &:hover { background: #f0f4ff; }
+    &--danger { color: #c0392b;
+        &:hover { background: #fff0f0; }
+    }
+}
+
+/* ── 彈窗 ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-dialog {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    width: 420px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 1.05em;
+    font-weight: 700;
+    color: #222;
+}
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.1em;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    &:hover { background: #f0f0f0; color: #333; }
+}
+.modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    label {
+        width: 72px;
+        flex-shrink: 0;
+        font-size: 0.9em;
+        color: #555;
+        font-weight: 500;
+    }
+    input, select {
+        flex: 1;
+        min-width: 0;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 0.9em;
+        &:focus { outline: none; border-color: #1a6fd4; box-shadow: 0 0 0 2px rgba(26,111,212,0.15); }
+        &:disabled { background: #f5f5f5; color: #aaa; }
+    }
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 20px 16px;
+    border-top: 1px solid #eee;
+}
+.btn-cancel {
+    padding: 7px 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f5f5f5;
+    cursor: pointer;
+    font-size: 0.9em;
+    &:hover { background: #e8e8e8; }
+}
+.btn-save {
+    padding: 7px 22px;
+    border: none;
+    border-radius: 5px;
+    background: #1a6fd4;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    &:hover { background: #155ab8; }
+}
+.add-btn {
+    font-size: 0.95em !important;
+    padding: 7px 16px !important;
+    background: #179b0b !important;
+    color: #fff !important;
+    border-color: #179b0b !important;
+    &:hover { background: #188d0d !important; border-color: #188d0d !important; }
 }
 </style>
