@@ -51,17 +51,12 @@
                                     <div class="color-picker-group">
                                         <div class="color-input-wrapper">
                                             <label>填充色</label>
-                                            <input 
-                                                v-model="activity.color" 
-                                                type="text"
-                                                class="color-input hex-input"
-                                                placeholder="#009bff4d"
-                                            />
                                             <input
-                                                :value="getFillColorHex(activity.color)"
-                                                type="color"
-                                                class="native-color-picker"
-                                                @input="onFillColorPick(activity, $event.target.value)"
+                                                :value="activity.color"
+                                                type="text"
+                                                readonly
+                                                class="color-input hex-input fill-readonly"
+                                                title="填充色 = 邊框色 + 透明度"
                                             />
                                             <input
                                                 :value="getFillAlpha(activity.color)"
@@ -76,11 +71,12 @@
                                         </div>
                                         <div class="color-input-wrapper">
                                             <label>邊框色</label>
-                                            <input 
-                                                v-model="activity.border" 
+                                            <input
+                                                v-model="activity.border"
                                                 type="text"
                                                 class="color-input hex-input"
                                                 placeholder="#000000"
+                                                @input="onBorderHexInput(activity, $event.target.value)"
                                             />
                                             <input
                                                 :value="normalizeHex(activity.border)"
@@ -89,14 +85,14 @@
                                                 @input="onBorderColorPick(activity, $event.target.value)"
                                             />
                                         </div>
-                                        <div class="color-preview">
+                                        <div class="color-preview" title="色塊預覽">
                                             <div :style="{ 
                                                 background: activity.color,
                                                 border: `2px solid ${activity.border}`
                                             }"></div>
                                         </div>
                                     </div>
-                                    <button class="btn-remove-activity" @click="removeActivity(vessel, activityIdx)">刪除</button>
+                                    <button class="btn-remove-activity" @click="removeActivity(vessel, activityIdx)" title="刪除">✕</button>
                                 </div>
                             </div>
                             <div class="vessel-footer">
@@ -152,10 +148,12 @@ export default {
             const settings = getSettings()
             this.formData = JSON.parse(JSON.stringify(settings))
 
-            // 兼容舊資料：若填充色仍為 rgba 或 #RRGGBB，統一轉為 #RRGGBBAA
+            // 兼容舊資料，並將填充色 RGB 同步為邊框色
             this.formData.vessels.forEach(vessel => {
                 vessel.activities.forEach(activity => {
                     activity.color = this.normalizeHexa(activity.color)
+                    const alpha = this.getFillAlpha(activity.color)
+                    activity.color = this.buildFillColor(activity.border, alpha)
                 })
             })
         },
@@ -281,26 +279,24 @@ export default {
             const value = (hexColor || '').trim()
             return this.isValidHexColor(value) ? value : '#000000'
         },
-        onFillColorPick(activity, hexColor) {
-            const parsed = this.parseHexaColor(this.normalizeHexa(activity.color))
-            const alpha = parsed ? parsed.a : 0.3
-            const hex = this.normalizeHex(hexColor)
-
-            const r = parseInt(hex.slice(1, 3), 16)
-            const g = parseInt(hex.slice(3, 5), 16)
-            const b = parseInt(hex.slice(5, 7), 16)
-            const alphaHex = this.toHex(Math.round(alpha * 255))
-
-            activity.color = `#${this.toHex(r)}${this.toHex(g)}${this.toHex(b)}${alphaHex}`
+        buildFillColor(borderHex, alpha) {
+            const border = this.normalizeHex(borderHex)
+            const r = parseInt(border.slice(1, 3), 16)
+            const g = parseInt(border.slice(3, 5), 16)
+            const b = parseInt(border.slice(5, 7), 16)
+            const a = Math.max(0, Math.min(1, Number(alpha)))
+            const alphaHex = this.toHex(Math.round(a * 255))
+            return `#${this.toHex(r)}${this.toHex(g)}${this.toHex(b)}${alphaHex}`
         },
         onFillAlphaChange(activity, alphaValue) {
-            const parsed = this.parseHexaColor(this.normalizeHexa(activity.color)) || { r: 0, g: 0, b: 0 }
-            const alpha = Math.max(0, Math.min(1, Number(alphaValue)))
-            const alphaHex = this.toHex(Math.round(alpha * 255))
-            activity.color = `#${this.toHex(parsed.r)}${this.toHex(parsed.g)}${this.toHex(parsed.b)}${alphaHex}`
+            activity.color = this.buildFillColor(activity.border, alphaValue)
         },
         onBorderColorPick(activity, hexColor) {
             activity.border = this.normalizeHex(hexColor)
+            activity.color = this.buildFillColor(activity.border, this.getFillAlpha(activity.color))
+        },
+        onBorderHexInput(activity, hexValue) {
+            activity.color = this.buildFillColor(hexValue, this.getFillAlpha(activity.color))
         }
     }
 }
@@ -350,7 +346,7 @@ export default {
 }
 
 .settings-dialog {
-    width: 850px;
+    width: 800px;
 }
 
 .modal-header {
@@ -456,8 +452,8 @@ export default {
     display: flex;
     align-items: center;
     margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #ddd;
+    padding: 8px 0;
+    border-top: 2px solid #ddd;
 }
 
 .vessel-name-input {
@@ -584,6 +580,12 @@ export default {
     &.hex-input {
         max-width: 100px;
     }
+}
+
+.fill-readonly {
+    background: #f5f5f5;
+    color: #999;
+    cursor: default;
 }
 
 .native-color-picker {

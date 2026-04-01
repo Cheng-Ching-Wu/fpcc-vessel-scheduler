@@ -145,39 +145,39 @@ const d = (mo, day, h = 0) => new Date(2025, mo - 1, day, h, 0)
 const ACTIVITIES = {
     s1_bunkering: [
         // 跨週（左側）：起點在本週前，終點進入本週
-        { label: 'X', start: d(9,28,12), end: d(9,29,12)  },
-        { label: 'J', start: d(9,30,6),  end: d(9,30,18)  },
-        { label: 'K', start: d(10,2,6),  end: d(10,2,18)  },
+        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'X', start: d(9,28,12), end: d(9,29,12)  },
+        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'J', start: d(9,30,6),  end: d(9,30,18)  },
+        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'K', start: d(10,2,6),  end: d(10,2,18)  },
         // 跨週（右側）：起點在本週內，終點超出本週
-        { label: 'Y', start: d(10,5,12), end: d(10,6,12)  },
+        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'Y', start: d(10,5,12), end: d(10,6,12)  },
     ],
     s1_transfer: [
-        { label: 'J', start: d(10,1,0),  end: d(10,2,6)   },
-        { label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
+        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'transfer', activityLabel: '駁油', label: 'J', start: d(10,1,0),  end: d(10,2,6)   },
+        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'transfer', activityLabel: '駁油', label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
     ],
     s2_bunkering: [
-        { label: 'A', start: d(9,30,0),  end: d(9,30,12)  },
-        { label: 'B', start: d(9,30,0),  end: d(9,30,12)  },
-        { label: 'C', start: d(9,30,0),  end: d(9,30,12)  },
-        { label: 'D', start: d(10,2,6),  end: d(10,2,18)  },
-        { label: 'L', start: d(10,2,6),  end: d(10,2,18)  },
-        { label: 'H', start: d(10,2,6),  end: d(10,2,18)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'A', start: d(9,30,0),  end: d(9,30,12)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'B', start: d(9,30,0),  end: d(9,30,12)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'C', start: d(9,30,0),  end: d(9,30,12)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'D', start: d(10,2,6),  end: d(10,2,18)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'L', start: d(10,2,6),  end: d(10,2,18)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'H', start: d(10,2,6),  end: d(10,2,18)  },
     ],
     s2_transfer: [
         // 跨週（左側）
-        { label: 'W', start: d(9,28,18), end: d(9,29,6)   },
-        { label: 'A', start: d(10,1,0),  end: d(10,1,6)   },
-        { label: 'C', start: d(10,1,6),  end: d(10,1,12)  },
-        { label: 'B', start: d(10,1,12), end: d(10,2,0)   },
-        { label: 'H', start: d(10,3,6),  end: d(10,3,18)  },
-        { label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'W', start: d(9,28,18), end: d(9,29,6)   },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'A', start: d(10,1,0),  end: d(10,1,6)   },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'C', start: d(10,1,6),  end: d(10,1,12)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'B', start: d(10,1,12), end: d(10,2,0)   },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'H', start: d(10,3,6),  end: d(10,3,18)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
         // 跨週（右側）
-        { label: 'Z', start: d(10,5,18), end: d(10,6,18)  },
+        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'Z', start: d(10,5,18), end: d(10,6,18)  },
     ],
     s3_patrol: [
-        { label: 'J', start: d(10,1,0),  end: d(10,1,18)  },
-        { label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
-        { label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
+        { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol', activityLabel: '警戒', label: 'J', start: d(10,1,0),  end: d(10,1,18)  },
+        { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol', activityLabel: '警戒', label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
+        { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol', activityLabel: '警戒', label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
     ],
 }
 
@@ -771,6 +771,10 @@ export default {
                                             const ai = oldArr.indexOf(act)
                                             if (ai !== -1) oldArr.splice(ai, 1)
                                         }
+                                        act.vesselPrefix   = newTask.vesselPrefix
+                                        act.vesselName     = newTask.vesselName
+                                        act.activityKey    = newTask.activityKey
+                                        act.activityLabel  = newTask.activityLabel
                                         if (!ACTIVITIES[newTask.id]) ACTIVITIES[newTask.id] = []
                                         ACTIVITIES[newTask.id].push(act)
                                         // 重新分道（跨列後兩列的 _lane 都需重算）
@@ -905,9 +909,8 @@ export default {
             return this.pendingDeleteAct ? this.pendingDeleteAct.label : ''
         },
         deleteTargetItem() {
-            if (!this.pendingDeleteTaskId || !this.pendingDeleteAct) return ''
-            const m = this.pendingDeleteTaskId.match(/^s\d+_(.+)$/)
-            const typeKey = m ? m[1] : ''
+            if (!this.pendingDeleteAct) return ''
+            const typeKey = this.pendingDeleteAct.activityKey
             const typeLabel = this.legendData.find(l => l.key === typeKey)?.label ?? typeKey
             return `${typeLabel} ${this.pendingDeleteAct.label}`.trim()
         },
@@ -1013,6 +1016,10 @@ export default {
                         : 1
                     rows.push({
                         id: taskId,
+                        vesselPrefix: v.prefix,
+                        vesselName: v.name,
+                        activityKey: a.key,
+                        activityLabel: a.label,
                         text: a.label,
                         isEmptyRow: true,
                         start_date: gantt.config.start_date,
@@ -1201,9 +1208,8 @@ export default {
             this.modalMode = 'edit'
             this.editTaskId = taskId
             this.editAct = act
-            const parts = taskId.match(/^(s\d+)_(.+)$/)
-            const vessel = parts ? parts[1] : ''
-            const type   = parts ? parts[2] : ''
+            const vessel = act.vesselPrefix
+            const type   = act.activityKey
             const pad = n => String(n).padStart(2, '0')
             this.modalForm = {
                 vessel, type,
@@ -1229,8 +1235,10 @@ export default {
             if (isNaN(newStart) || isNaN(newEnd)) { alert('時間格式錯誤'); return }
             if (newEnd <= newStart) { alert('結束時間必須晚於開始時間'); return }
             const newTaskId = `${f.vessel}_${f.type}`
+            const newVesselName    = getSettings().vessels.find(v => v.prefix === f.vessel)?.name ?? f.vessel
+            const newActivityLabel = getSettings().vessels.find(v => v.prefix === f.vessel)?.activities.find(a => a.key === f.type)?.label ?? f.type
             if (this.modalMode === 'add') {
-                const act = { label: f.label, start: newStart, end: newEnd }
+                const act = { vesselPrefix: f.vessel, vesselName: newVesselName, activityKey: f.type, activityLabel: newActivityLabel, label: f.label, start: newStart, end: newEnd }
                 if (!ACTIVITIES[newTaskId]) ACTIVITIES[newTaskId] = []
                 ACTIVITIES[newTaskId].push(act)
                 assignLanes(ACTIVITIES[newTaskId])
@@ -1240,6 +1248,8 @@ export default {
                 if (oldTaskId !== newTaskId) {
                     const oldArr = ACTIVITIES[oldTaskId]
                     if (oldArr) { const i = oldArr.indexOf(act); if (i !== -1) oldArr.splice(i, 1) }
+                    act.vesselPrefix = f.vessel; act.vesselName = newVesselName
+                    act.activityKey = f.type; act.activityLabel = newActivityLabel
                     act.label = f.label; act.start = newStart; act.end = newEnd
                     if (!ACTIVITIES[newTaskId]) ACTIVITIES[newTaskId] = []
                     ACTIVITIES[newTaskId].push(act)
