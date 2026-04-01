@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="plan-gantt-nav">
-            <span style="font-size: 0.875em; align-self: end;">單位時間: 30 分鐘</span>
+            <span style="font-size: 0.875em; align-self: end;">單位時間: {{ timeIntervalHours }} 小時/格 ｜ 拖曳最小單位: {{ dragSnapMinutes }} 分鐘</span>
             <div class="nav-spacer"></div>
             <a role="button" class="nav-btn" @click="prevWeek">&#8249;</a>
             <select class="nav-select" v-model.number="selectedYear" @change="onYearWeekChange">
@@ -25,6 +25,7 @@
             <a role="button" class="nav-btn" @click="nextWeek">&#8250;</a>
             <div class="nav-spacer"></div>
             <a role="button" class="nav-btn today-btn" @click="goToday">今天</a>
+            <a role="button" class="nav-btn settings-btn" @click.stop="openSettingsModal">⚙ 設定</a>
             <a role="button" class="nav-btn add-btn" @click.stop="openAddModal">＋ 新增</a>
         </div>
         <div class="plan-gantt">
@@ -115,12 +116,21 @@
                 </div>
             </div>
         </transition>
+
+        <!-- 設定彈窗 -->
+        <SettingsModal 
+            :visible="settingsModalVisible" 
+            @close="closeSettingsModal"
+            @update-settings="handleSettingsUpdate"
+        />
     </div>
 </template>
 
 <script>
 import { gantt } from 'dhtmlx-gantt'
 import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
+import SettingsModal from './SettingsModal.vue'
+import { getSettings, initializeSettings } from '@/appSettings'
 
 // 船隻群組（vessel label overlay 用）
 const VESSELS = [
@@ -238,11 +248,17 @@ const BASE_ROW_H = 35
 
 export default {
     name: 'PlanGantt',
+    components: {
+        SettingsModal
+    },
     data() {
         return {
             currentWeekStart: null,
             selectedYear: new Date().getFullYear(),
             selectedWeek: 1,
+            settingsModalVisible: false,
+            timeIntervalHours: 6,
+            dragSnapMinutes: 30,
             modalVisible: false,
             modalMode: 'add',
             modalForm: {
@@ -268,6 +284,11 @@ export default {
         }
     },
     created() {
+        // 初始化設定
+        initializeSettings()
+        const settings = getSettings()
+        this.timeIntervalHours = settings.timeIntervalHours
+
         // 從 legendData 產生 TYPE_COLORS（保持全域引用）
         window.TYPE_COLORS = {}
         this.legendData.forEach(item => {
@@ -295,11 +316,11 @@ export default {
                 format: date => `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')} (${DOW[date.getDay()]})`
             },
             {
-                unit: 'hour', step: 6, height: 40,
+                unit: 'hour', step: this.timeIntervalHours, height: 40,
                 format: date => {
                     const pad = n => String(n).padStart(2, '0')
                     const h1  = pad(date.getHours())
-                    const end = new Date(date.getTime() + 6 * 60 * 60 * 1000)
+                    const end = new Date(date.getTime() + this.timeIntervalHours * 60 * 60 * 1000)
                     const h2  = pad(end.getHours())
                     return `<div style="line-height:1.2">${h1}:00<br>${h2}:00</div>`
                 }
@@ -421,7 +442,7 @@ export default {
             // 用 gantt.posFromDate 計算實際渲染的 msPerPx，確保與表頭時間完全對齊
             const _px6h  = gantt.posFromDate(new Date(timelineStart + 6 * 3600000))
             const msPerPx = 6 * 3600000 / _px6h
-            const SNAP_MS  = 30 * 60 * 1000  // 30 分鐘對齊單位
+            const SNAP_MS  = this.dragSnapMinutes * 60 * 1000
             const snapMs   = ms => Math.round(ms / SNAP_MS) * SNAP_MS
             // Math.round 確保回傳整數 px，避免浮點誤差累積
             const snapPx   = px => Math.round((snapMs(timelineStart + px * msPerPx) - timelineStart) / msPerPx)
@@ -804,43 +825,8 @@ export default {
         gantt.init(this.$refs.ganttEl)
         gantt.clearAll()
 
-        const empty = (id, text) => {
-            const acts = ACTIVITIES[id] || []
-            // _lane 已在頂層 assignLanes 初始化時寫入，直接計算 totalLanes
-            const totalLanes = acts.length
-                ? Math.max(...acts.map(a => (a._lane ?? 0)), 0) + 1
-                : 1
-            return {
-                id, text, isEmptyRow: true,
-                start_date: gantt.config.start_date,
-                end_date:   gantt.config.end_date,
-                row_height: totalLanes * BASE_ROW_H,
-            }
-        }
-
-        gantt.parse({
-            data: [
-                // 油駁船1
-                empty('s1_bunkering',   '補油'),
-                empty('s1_transfer',    '駁油'),
-                empty('s1_maintenance', '維修'),
-                empty('s1_breakdown',   '故障'),
-                empty('s1_other',       '其他'),
-                // 油駁船2
-                empty('s2_bunkering',   '補油'),
-                empty('s2_transfer',    '駁油'),
-                empty('s2_maintenance', '維修'),
-                empty('s2_breakdown',   '故障'),
-                empty('s2_other',       '其他'),
-                // 工作船3
-                empty('s3_transport',   '載運'),
-                empty('s3_patrol',      '警戒'),
-                empty('s3_maintenance', '維修'),
-                empty('s3_breakdown',   '故障'),
-                empty('s3_other',       '其他'),
-            ],
-            links: []
-        })
+        // 依目前設定動態建立列，避免新增項目後沒有對應 row
+        this.syncSettingsToGantt(getSettings(), { rebuildRows: true })
 
         // parse 後同步一次列高，確保 grid 與 timeline 都套用到最新 row_height
         this.updateRowHeights()
@@ -900,11 +886,12 @@ export default {
             return Array.from({ length: total }, (_, i) => i + 1)
         },
         vesselOptions() {
-            return [
-                { prefix: 's1', name: '油駁船1', types: ['bunkering','transfer','maintenance','breakdown','other'] },
-                { prefix: 's2', name: '油駁船2', types: ['bunkering','transfer','maintenance','breakdown','other'] },
-                { prefix: 's3', name: '工作船3', types: ['transport','patrol','maintenance','breakdown','other'] },
-            ]
+            const settings = getSettings()
+            return (settings.vessels || []).map(v => ({
+                prefix: v.prefix,
+                name: v.name,
+                types: [...new Set((v.activities || []).map(a => a.key))]
+            }))
         },
         availableTypes() {
             const vessel = this.vesselOptions.find(v => v.prefix === this.modalForm.vessel)
@@ -941,6 +928,103 @@ export default {
         }
     },
     methods: {
+        openSettingsModal() {
+            this.settingsModalVisible = true
+        },
+        closeSettingsModal() {
+            this.settingsModalVisible = false
+        },
+        handleSettingsUpdate(newSettings) {
+            // 更新時間間隔
+            this.timeIntervalHours = newSettings.timeIntervalHours
+            
+            // 更新 Gantt 配置中的時間間隔
+            gantt.config.scales[1].step = this.timeIntervalHours
+            gantt.config.scales[1].format = date => {
+                const pad = n => String(n).padStart(2, '0')
+                const h1 = pad(date.getHours())
+                const end = new Date(date.getTime() + this.timeIntervalHours * 60 * 60 * 1000)
+                const h2 = pad(end.getHours())
+                return `<div style="line-height:1.2">${h1}:00<br>${h2}:00</div>`
+            }
+
+            // 同步船隻/項目結構與顏色，並重建列資料
+            this.syncSettingsToGantt(newSettings, { rebuildRows: true })
+            
+            this.updateRowHeights()
+            gantt.render()
+        },
+        syncSettingsToGantt(newSettings, options = { rebuildRows: false }) {
+            const vessels = newSettings.vessels || []
+
+            const nextVessels = vessels.map(v => ({
+                name: v.name,
+                ids: (v.activities || []).map(a => `${v.prefix}_${a.key}`)
+            }))
+            VESSELS.splice(0, VESSELS.length, ...nextVessels)
+
+            const validIds = new Set()
+            vessels.forEach(v => {
+                (v.activities || []).forEach(a => {
+                    const taskId = `${v.prefix}_${a.key}`
+                    validIds.add(taskId)
+                    if (!ACTIVITIES[taskId]) ACTIVITIES[taskId] = []
+                })
+            })
+
+            Object.keys(ACTIVITIES).forEach(taskId => {
+                if (!validIds.has(taskId)) delete ACTIVITIES[taskId]
+            })
+
+            Object.values(ACTIVITIES).forEach(acts => assignLanes(acts))
+
+            const legendMap = new Map()
+            vessels.forEach(v => {
+                (v.activities || []).forEach(a => {
+                    if (!legendMap.has(a.key)) {
+                        legendMap.set(a.key, {
+                            key: a.key,
+                            label: a.label,
+                            color: a.color,
+                            border: a.border,
+                        })
+                    }
+                })
+            })
+            this.legendData = Array.from(legendMap.values())
+
+            window.TYPE_COLORS = {}
+            this.legendData.forEach(item => {
+                window.TYPE_COLORS[item.key] = { color: item.color, border: item.border }
+            })
+
+            if (options.rebuildRows) {
+                this.rebuildRowsFromSettings(vessels)
+            }
+        },
+        rebuildRowsFromSettings(vessels) {
+            const rows = []
+            vessels.forEach(v => {
+                (v.activities || []).forEach(a => {
+                    const taskId = `${v.prefix}_${a.key}`
+                    const acts = ACTIVITIES[taskId] || []
+                    const totalLanes = acts.length
+                        ? Math.max(...acts.map(x => (x._lane ?? 0)), 0) + 1
+                        : 1
+                    rows.push({
+                        id: taskId,
+                        text: a.label,
+                        isEmptyRow: true,
+                        start_date: gantt.config.start_date,
+                        end_date: gantt.config.end_date,
+                        row_height: totalLanes * BASE_ROW_H,
+                    })
+                })
+            })
+
+            gantt.clearAll()
+            gantt.parse({ data: rows, links: [] })
+        },
         // ── 工具方法（從 mounted 閃住優抽出）──
         fmtDt(dt) {
             const p = n => String(n).padStart(2, '0')
@@ -1532,5 +1616,15 @@ export default {
     color: #fff !important;
     border-color: #179b0b !important;
     &:hover { background: #188d0d !important; border-color: #188d0d !important; }
+}
+
+.settings-btn {
+    font-size: 0.95em !important;
+    height: 34px !important;
+    padding: 0 14px !important;
+    background: #7b68ee !important;
+    color: #fff !important;
+    border-color: #7b68ee !important;
+    &:hover { background: #6c63d5 !important; border-color: #6c63d5 !important; }
 }
 </style>
