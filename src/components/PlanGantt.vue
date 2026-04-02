@@ -142,43 +142,37 @@ const VESSELS = [
 // 每列實際要畫的 task bars（同列可多個）
 const d = (mo, day, h = 0) => new Date(2025, mo - 1, day, h, 0)
 
-const ACTIVITIES = {
-    s1_bunkering: [
-        // 跨週（左側）：起點在本週前，終點進入本週
-        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'X', start: d(9,28,12), end: d(9,29,12)  },
-        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'J', start: d(9,30,6),  end: d(9,30,18)  },
-        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'K', start: d(10,2,6),  end: d(10,2,18)  },
-        // 跨週（右側）：起點在本週內，終點超出本週
-        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'Y', start: d(10,5,12), end: d(10,6,12)  },
-    ],
-    s1_transfer: [
-        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'transfer', activityLabel: '駁油', label: 'J', start: d(10,1,0),  end: d(10,2,6)   },
-        { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'transfer', activityLabel: '駁油', label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
-    ],
-    s2_bunkering: [
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'A', start: d(9,30,0),  end: d(9,30,12)  },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'B', start: d(9,30,0),  end: d(9,30,12)  },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'C', start: d(9,30,0),  end: d(9,30,12)  },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'D', start: d(10,2,6),  end: d(10,2,18)  },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'L', start: d(10,2,6),  end: d(10,2,18)  },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'H', start: d(10,2,6),  end: d(10,2,18)  },
-    ],
-    s2_transfer: [
-        // 跨週（左側）
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'W', start: d(9,28,18), end: d(9,29,6)   },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'A', start: d(10,1,0),  end: d(10,1,6)   },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'C', start: d(10,1,6),  end: d(10,1,12)  },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'B', start: d(10,1,12), end: d(10,2,0)   },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'H', start: d(10,3,6),  end: d(10,3,18)  },
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
-        // 跨週（右側）
-        { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer', activityLabel: '駁油', label: 'Z', start: d(10,5,18), end: d(10,6,18)  },
-    ],
-    s3_patrol: [
-        { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol', activityLabel: '警戒', label: 'J', start: d(10,1,0),  end: d(10,1,18)  },
-        { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol', activityLabel: '警戒', label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
-        { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol', activityLabel: '警戒', label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
-    ],
+const ACTIVITIES = [
+    { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'X', start: d(9,28,12), end: d(9,29,12)  },
+    { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'J', start: d(9,30,6),  end: d(9,30,18)  },
+    { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'K', start: d(10,2,6),  end: d(10,2,18)  },
+    { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'bunkering', activityLabel: '補油', label: 'Y', start: d(10,5,12), end: d(10,6,12)  },
+    { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'transfer',  activityLabel: '駁油', label: 'J', start: d(10,1,0),  end: d(10,2,6)   },
+    { vesselPrefix: 's1', vesselName: '油駁船1', activityKey: 'transfer',  activityLabel: '駁油', label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'A', start: d(9,30,0),  end: d(9,30,12)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'B', start: d(9,30,0),  end: d(9,30,12)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'C', start: d(9,30,0),  end: d(9,30,12)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'D', start: d(10,2,6),  end: d(10,2,18)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'L', start: d(10,2,6),  end: d(10,2,18)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'bunkering', activityLabel: '補油', label: 'H', start: d(10,2,6),  end: d(10,2,18)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer',  activityLabel: '駁油', label: 'W', start: d(9,28,18), end: d(9,29,6)   },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer',  activityLabel: '駁油', label: 'A', start: d(10,1,0),  end: d(10,1,6)   },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer',  activityLabel: '駁油', label: 'C', start: d(10,1,6),  end: d(10,1,12)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer',  activityLabel: '駁油', label: 'B', start: d(10,1,12), end: d(10,2,0)   },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer',  activityLabel: '駁油', label: 'H', start: d(10,3,6),  end: d(10,3,18)  },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer',  activityLabel: '駁油', label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
+    { vesselPrefix: 's2', vesselName: '油駁船2', activityKey: 'transfer',  activityLabel: '駁油', label: 'Z', start: d(10,5,18), end: d(10,6,18)  },
+    { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol',    activityLabel: '警戒', label: 'J', start: d(10,1,0),  end: d(10,1,18)  },
+    { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol',    activityLabel: '警戒', label: 'K', start: d(10,3,0),  end: d(10,4,6)   },
+    { vesselPrefix: 's3', vesselName: '工作船3', activityKey: 'patrol',    activityLabel: '警戒', label: 'L', start: d(10,4,6),  end: d(10,5,0)   },
+]
+
+function getActsForTask(taskId) {
+    return ACTIVITIES.filter(a => `${a.vesselPrefix}_${a.activityKey}` === taskId)
+}
+
+function getTaskIds() {
+    return [...new Set(ACTIVITIES.map(a => `${a.vesselPrefix}_${a.activityKey}`))]
 }
 
 /**
@@ -242,7 +236,7 @@ function assignLanes(acts, draggedAct = null) {
 }
 
 // 初始化時對所有列執行一次分道
-Object.values(ACTIVITIES).forEach(acts => assignLanes(acts))
+getTaskIds().forEach(id => assignLanes(getActsForTask(id)))
 
 const BASE_ROW_H = 35
 
@@ -410,7 +404,7 @@ export default {
 
                     // 當週無資料時，整個項目欄覆蓋「暫無資料」（取代 vessel label）
                     const hasData = ids.some(id =>
-                        (ACTIVITIES[id] || []).some(a =>
+                        getActsForTask(id).some(a =>
                             a.end.getTime() > wsMs && a.start.getTime() < weMs
                         )
                     )
@@ -422,7 +416,7 @@ export default {
             // ── 無資料船的所有 DOM 列：用 CSS class 隱藏，不碰 gantt 自己的 inline height ──
             VESSELS.forEach(({ ids }) => {
                 const hasData = ids.some(id =>
-                    (ACTIVITIES[id] || []).some(a =>
+                    getActsForTask(id).some(a =>
                         a.end.getTime() > wsMs && a.start.getTime() < weMs
                     )
                 )
@@ -447,7 +441,8 @@ export default {
             // Math.round 確保回傳整數 px，避免浮點誤差累積
             const snapPx   = px => Math.round((snapMs(timelineStart + px * msPerPx) - timelineStart) / msPerPx)
 
-            Object.entries(ACTIVITIES).forEach(([taskId, acts]) => {
+            getTaskIds().forEach(taskId => {
+                const acts = getActsForTask(taskId)
                 if (!acts || acts.length === 0) return
                 const idx = gantt.getTaskIndex(taskId)
                 if (idx === -1) return
@@ -765,25 +760,18 @@ export default {
                                     const newTask = gantt.getTaskByIndex(targetIdx)
 
                     if (newTask && newTask.id !== taskId) {
-                                        // 跨列：移動資料，重新分道兩個受影響的列，更新列高
-                                        const oldArr = ACTIVITIES[taskId]
-                                        if (oldArr) {
-                                            const ai = oldArr.indexOf(act)
-                                            if (ai !== -1) oldArr.splice(ai, 1)
-                                        }
+                                        // 跨列：更新 act 的 vessel/activity 資訊（act 仍在 ACTIVITIES 中，不需搬移）
+                                        const srcOtherActs = getActsForTask(taskId).filter(a => a !== act)
                                         act.vesselPrefix   = newTask.vesselPrefix
                                         act.vesselName     = newTask.vesselName
                                         act.activityKey    = newTask.activityKey
                                         act.activityLabel  = newTask.activityLabel
-                                        if (!ACTIVITIES[newTask.id]) ACTIVITIES[newTask.id] = []
-                                        ACTIVITIES[newTask.id].push(act)
                                         // 重新分道（跨列後兩列的 _lane 都需重算）
-                                        const srcActs = ACTIVITIES[taskId]
-                                        if (srcActs && srcActs.length) assignLanes(srcActs)  // 來源列無 draggedAct（act 已移走）
-                                        assignLanes(ACTIVITIES[newTask.id], act)              // 目標列：act 排最後，其他 bar 優先
+                                        if (srcOtherActs.length) assignLanes(srcOtherActs)   // 來源列無 draggedAct（act 已移走）
+                                        assignLanes(getActsForTask(newTask.id), act)          // 目標列：act 排最後，其他 bar 優先
                                     } else {
                                         // 同列：act 排最後，非拖曳 bar 優先保留位置
-                                        assignLanes(ACTIVITIES[taskId], act)
+                                        assignLanes(getActsForTask(taskId), act)
                                     }
                                     this.updateRowHeights()
                                     gantt.render()
@@ -791,14 +779,14 @@ export default {
                                     act.end = isRightClipped
                                         ? new Date(snapMs(origEnd.getTime() + (finalW - startW) * msPerPx))
                                         : new Date(snapMs(timelineStart + (finalLeft + finalW) * msPerPx))
-                                    assignLanes(ACTIVITIES[taskId], act)
+                                    assignLanes(getActsForTask(taskId), act)
                                     this.updateRowHeights()
                                     gantt.render()
                                 } else if (type === 'resize-left') {
                                     act.start = isLeftClipped
                                         ? new Date(snapMs(origStart.getTime() + finalLeft * msPerPx))
                                         : new Date(snapMs(timelineStart + finalLeft * msPerPx))
-                                    assignLanes(ACTIVITIES[taskId], act)
+                                    assignLanes(getActsForTask(taskId), act)
                                     this.updateRowHeights()
                                     gantt.render()
                                 }
@@ -969,17 +957,16 @@ export default {
             const validIds = new Set()
             vessels.forEach(v => {
                 (v.activities || []).forEach(a => {
-                    const taskId = `${v.prefix}_${a.key}`
-                    validIds.add(taskId)
-                    if (!ACTIVITIES[taskId]) ACTIVITIES[taskId] = []
+                    validIds.add(`${v.prefix}_${a.key}`)
                 })
             })
 
-            Object.keys(ACTIVITIES).forEach(taskId => {
-                if (!validIds.has(taskId)) delete ACTIVITIES[taskId]
-            })
+            for (let i = ACTIVITIES.length - 1; i >= 0; i--) {
+                const a = ACTIVITIES[i]
+                if (!validIds.has(`${a.vesselPrefix}_${a.activityKey}`)) ACTIVITIES.splice(i, 1)
+            }
 
-            Object.values(ACTIVITIES).forEach(acts => assignLanes(acts))
+            getTaskIds().forEach(id => assignLanes(getActsForTask(id)))
 
             const legendMap = new Map()
             vessels.forEach(v => {
@@ -1010,7 +997,7 @@ export default {
             vessels.forEach(v => {
                 (v.activities || []).forEach(a => {
                     const taskId = `${v.prefix}_${a.key}`
-                    const acts = ACTIVITIES[taskId] || []
+                    const acts = getActsForTask(taskId)
                     const totalLanes = acts.length
                         ? Math.max(...acts.map(x => (x._lane ?? 0)), 0) + 1
                         : 1
@@ -1085,10 +1072,10 @@ export default {
                     try { gantt.getTask(id).row_height = BASE_ROW_H } catch (e) { /* ignore */ }
                 })
             })
-            Object.keys(ACTIVITIES).forEach(taskId => {
+            getTaskIds().forEach(taskId => {
                 try {
                     const task = gantt.getTask(taskId)
-                    const visActs = (ACTIVITIES[taskId] || []).filter(a =>
+                    const visActs = getActsForTask(taskId).filter(a =>
                         a.end.getTime() > wsMs && a.start.getTime() < weMs
                     )
                     const totalLanes = visActs.length
@@ -1099,7 +1086,7 @@ export default {
             })
             VESSELS.forEach(({ ids }) => {
                 const hasData = ids.some(id =>
-                    (ACTIVITIES[id] || []).some(a =>
+                    getActsForTask(id).some(a =>
                         a.end.getTime() > wsMs && a.start.getTime() < weMs
                     )
                 )
@@ -1184,7 +1171,7 @@ export default {
             const we = new Date(ws.getTime() + 7 * 86400000)
             gantt.config.start_date = ws
             gantt.config.end_date   = we
-            Object.keys(ACTIVITIES).forEach(taskId => {
+            getTaskIds().forEach(taskId => {
                 try {
                     const task = gantt.getTask(taskId)
                     task.start_date = ws
@@ -1239,25 +1226,21 @@ export default {
             const newActivityLabel = getSettings().vessels.find(v => v.prefix === f.vessel)?.activities.find(a => a.key === f.type)?.label ?? f.type
             if (this.modalMode === 'add') {
                 const act = { vesselPrefix: f.vessel, vesselName: newVesselName, activityKey: f.type, activityLabel: newActivityLabel, label: f.label, start: newStart, end: newEnd }
-                if (!ACTIVITIES[newTaskId]) ACTIVITIES[newTaskId] = []
-                ACTIVITIES[newTaskId].push(act)
-                assignLanes(ACTIVITIES[newTaskId])
+                ACTIVITIES.push(act)
+                assignLanes(getActsForTask(newTaskId))
             } else {
                 const oldTaskId = this.editTaskId
                 const act = this.editAct
                 if (oldTaskId !== newTaskId) {
-                    const oldArr = ACTIVITIES[oldTaskId]
-                    if (oldArr) { const i = oldArr.indexOf(act); if (i !== -1) oldArr.splice(i, 1) }
+                    const oldOtherActs = getActsForTask(oldTaskId).filter(a => a !== act)
                     act.vesselPrefix = f.vessel; act.vesselName = newVesselName
                     act.activityKey = f.type; act.activityLabel = newActivityLabel
                     act.label = f.label; act.start = newStart; act.end = newEnd
-                    if (!ACTIVITIES[newTaskId]) ACTIVITIES[newTaskId] = []
-                    ACTIVITIES[newTaskId].push(act)
-                    if (ACTIVITIES[oldTaskId]?.length) assignLanes(ACTIVITIES[oldTaskId])
-                    assignLanes(ACTIVITIES[newTaskId])
+                    if (oldOtherActs.length) assignLanes(oldOtherActs)
+                    assignLanes(getActsForTask(newTaskId))
                 } else {
                     act.label = f.label; act.start = newStart; act.end = newEnd
-                    assignLanes(ACTIVITIES[newTaskId], act)
+                    assignLanes(getActsForTask(newTaskId), act)
                 }
             }
             this.updateRowHeights()
@@ -1289,9 +1272,9 @@ export default {
             this.cancelDelete()
         },
         deleteAct(act, taskId) {
-            const arr = ACTIVITIES[taskId]
-            if (arr) { const i = arr.indexOf(act); if (i !== -1) arr.splice(i, 1) }
-            if (ACTIVITIES[taskId]?.length) assignLanes(ACTIVITIES[taskId])
+            const i = ACTIVITIES.indexOf(act); if (i !== -1) ACTIVITIES.splice(i, 1)
+            const remaining = getActsForTask(taskId)
+            if (remaining.length) assignLanes(remaining)
             this.updateRowHeights()
             gantt.render()
         },
@@ -1322,7 +1305,7 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
+    gap: 8px;
     padding: 8px 16px;
     background: #fff;
     border-bottom: 1px solid #ddd;
@@ -1334,7 +1317,7 @@ export default {
     justify-content: center;
     font-size: 1.5em;
     line-height: 1;
-    padding: 2px 12px;
+    padding: 4px 12px;
     cursor: pointer;
     border: 1px solid #ccc;
     border-radius: 4px;
