@@ -575,8 +575,7 @@ export default {
 /* ── Gantt 容器 ──*/
 .dhtmlx-gantt {
     width: 100%;
-    height: fit-content;
-    max-height: calc(100vh - 64px);
+    height: auto;
 }
 
 .hidden-bar {
