@@ -14,7 +14,6 @@
             <div class="nav-spacer"></div>
             <a role="button" class="nav-btn today-btn" @click="goToday">今天</a>
             <a role="button" class="nav-btn settings-btn" @click.stop="openSettingsModal">⚙ 設定</a>
-            <a role="button" class="nav-btn add-btn disabled" @click.stop="showReadOnlyNotice">＋ 新增</a>
         </div>
 
         <div class="dhtmlx-gantt" :class="{ 'loading-state': isLoading }">
@@ -968,7 +967,7 @@ export default {
 }
 
 .nav-timeinterval {
-    font-size: 0.875em;
+    font-size: 0.9em;
     align-self: end;
 }
 
