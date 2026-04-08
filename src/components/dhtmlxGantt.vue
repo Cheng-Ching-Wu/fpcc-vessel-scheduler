@@ -17,11 +17,16 @@
             <a role="button" class="nav-btn add-btn disabled" @click.stop="showReadOnlyNotice">＋ 新增</a>
         </div>
 
-        <div class="dhtmlx-gantt">
+        <div class="dhtmlx-gantt" :class="{ 'loading-state': isLoading }">
             <div ref="dhtmlxGantt" class="dhtmlx-gantt-host" v-show="!hasNoWeekData" style="width: 100%;"></div>
-            <div v-if="hasNoWeekData" class="no-data-panel">
+            <div v-if="hasNoWeekData && !isLoading" class="no-data-panel">
                 <span>暫無資料</span>
             </div>
+            <transition name="loading-fade">
+                <div v-if="isLoading" class="gantt-loading-overlay">
+                    <div class="gantt-spinner"></div>
+                </div>
+            </transition>
         </div>
 
         <!-- 設定 Modal -->
@@ -144,6 +149,7 @@ export default {
             apiReadOnly: true,
             hasNoWeekData: true,
             apiLoadFailed: false,
+            isLoading: false,
             blockedRanges: [
                 { start: new Date(2025, 8, 30, 0, 0), end: new Date(2025, 9, 1, 0, 0) }
             ],
@@ -450,10 +456,15 @@ export default {
         },
         async loadWeekData() {
             this.apiLoadFailed = false
-            await Promise.all([
-                this.loadActivitiesFromApi(),
-                this.loadBlockedRangesFromApi(),
-            ])
+            this.isLoading = true
+            try {
+                await Promise.all([
+                    this.loadActivitiesFromApi(),
+                    this.loadBlockedRangesFromApi(),
+                ])
+            } finally {
+                this.isLoading = false
+            }
         },
         getISOWeekInfo(date) {
             const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -977,6 +988,10 @@ export default {
     position: relative;
 }
 
+.dhtmlx-gantt.loading-state {
+    min-height: 350px;
+}
+
 .hidden-bar {
     display: none !important;
 }
@@ -1000,6 +1015,42 @@ export default {
     position: absolute;
     inset: 0;
     pointer-events: none;
+}
+
+.gantt-loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(1px);
+    z-index: 30;
+}
+
+.gantt-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #d7d7d7;
+    border-top-color: #1a6fd4;
+    border-radius: 50%;
+    animation: gantt-spin 0.8s linear infinite;
+}
+
+@keyframes gantt-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-fade-enter-active,
+.loading-fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.loading-fade-enter,
+.loading-fade-leave-to {
+    opacity: 0;
 }
 
 .no-data-panel {
