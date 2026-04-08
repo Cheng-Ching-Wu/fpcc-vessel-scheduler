@@ -18,7 +18,10 @@
         </div>
 
         <div class="dhtmlx-gantt">
-            <div ref="dhtmlxGantt" style="width: 100%;"></div>
+            <div ref="dhtmlxGantt" class="dhtmlx-gantt-host" v-show="!hasNoWeekData" style="width: 100%;"></div>
+            <div v-if="hasNoWeekData" class="no-data-panel">
+                <span>暫無資料</span>
+            </div>
         </div>
 
         <!-- 設定 Modal -->
@@ -139,6 +142,8 @@ export default {
             selectedYear: new Date().getFullYear(),
             selectedWeek: 1,
             apiReadOnly: true,
+            hasNoWeekData: true,
+            apiLoadFailed: false,
             blockedRanges: [
                 { start: new Date(2025, 8, 30, 0, 0), end: new Date(2025, 9, 1, 0, 0) }
             ],
@@ -412,11 +417,14 @@ export default {
         },
         rebuildGanttRows() {
             const rows = this.buildVisibleBerthRows()
+            this.hasNoWeekData = this.apiLoadFailed || rows.length === 0
+            gantt.config.autosize = 'y'
             gantt.clearAll()
             gantt.parse({
                 data: rows,
                 links: [],
             })
+            gantt.setSizes()
         },
         async loadActivitiesFromApi() {
             try {
@@ -424,6 +432,7 @@ export default {
                 const rows = this.extractRows(res)
                 this.activities = this.mapBerthActivitiesResponse(rows)
             } catch (err) {
+                this.apiLoadFailed = true
                 console.error('載入 berth-activities 失敗：', err)
                 this.activities = []
             }
@@ -434,11 +443,13 @@ export default {
                 const rows = this.extractRows(res)
                 this.blockedRanges = this.mapBlockedRangesResponse(rows)
             } catch (err) {
+                this.apiLoadFailed = true
                 console.error('載入 blocked-ranges 失敗：', err)
                 this.blockedRanges = []
             }
         },
         async loadWeekData() {
+            this.apiLoadFailed = false
             await Promise.all([
                 this.loadActivitiesFromApi(),
                 this.loadBlockedRangesFromApi(),
@@ -512,6 +523,7 @@ export default {
             await this.loadWeekData()
             this.rebuildGanttRows()
             gantt.render()
+            this.$nextTick(() => gantt.setSizes())
         },
         // ── 設定 Modal ──
         openSettingsModal() {
@@ -730,6 +742,9 @@ export default {
             ganttRoot.querySelectorAll('.custom-act-bar').forEach(el => el.remove())
             const barsArea = ganttRoot.querySelector('.gantt_data_area')
             if (!barsArea) return
+
+            if (this.hasNoWeekData) return
+
             const wsMs = gantt.config.start_date.getTime()
             const weMs = gantt.config.end_date.getTime()
             const rh   = gantt.config.row_height
@@ -853,6 +868,13 @@ export default {
 
         gantt.init(this.$refs.dhtmlxGantt)
         this.rebuildGanttRows()
+        // v-show 在 hasNoWeekData=false 後才把容器顯示；
+        // 需等 Vue DOM 更新後 gantt 才能正確量測尺寸並繪製。
+        if (!this.hasNoWeekData) {
+            await this.$nextTick()
+            gantt.render()
+            gantt.setSizes()
+        }
     },
     beforeDestroy() {
         if (this._hoverTooltip?.parentNode) this._hoverTooltip.parentNode.removeChild(this._hoverTooltip)
@@ -952,7 +974,7 @@ export default {
 /* ── Gantt 容器 ──*/
 .dhtmlx-gantt {
     width: 100%;
-    height: auto;
+    position: relative;
 }
 
 .hidden-bar {
@@ -978,6 +1000,23 @@ export default {
     position: absolute;
     inset: 0;
     pointer-events: none;
+}
+
+.no-data-panel {
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    background: #cecece20;
+    border: 1px solid #e0e0e0;
+
+    span {
+        font-size: 1.5em;
+        font-weight: 900;
+        color: #999999;
+    }
 }
 
 /* ── Modal 共用 ── */
