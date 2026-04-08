@@ -14,7 +14,7 @@
             <div class="nav-spacer"></div>
             <a role="button" class="nav-btn today-btn" @click="goToday">今天</a>
             <a role="button" class="nav-btn settings-btn" @click.stop="openSettingsModal">⚙ 設定</a>
-            <a role="button" class="nav-btn add-btn" @click.stop="openAddModal">＋ 新增</a>
+            <a role="button" class="nav-btn add-btn disabled" @click.stop="showReadOnlyNotice">＋ 新增</a>
         </div>
 
         <div class="dhtmlx-gantt">
@@ -108,6 +108,7 @@
 <script>
 import { gantt } from 'dhtmlx-gantt'
 import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
+import { berthApiService } from '@/api/BerthApiService'
 
 const SECTIONS = [
     { name: '碼頭',  prefix: 'w', ids: ['w1','w2','w3','w4','w5','w6','w7','w8','w9','w10'], color: '#a8c8e8', borderColor: '#4a90c4' },
@@ -116,6 +117,20 @@ const SECTIONS = [
     { name: '油駁船', prefix: 't', ids: ['t1','t2','t3'],                                      color: '#c03030', borderColor: '#900000' },
 ]
 
+const ROW_STYLES = {
+    berth: { color: '#a8c8e8', borderColor: '#4a90c4' },
+    buoy: { color: '#e8b87a', borderColor: '#c07030' },
+    anchorage: { color: '#f0b0c8', borderColor: '#c03070' },
+    barge: { color: '#f6c2c2', borderColor: '#900000' },
+}
+
+const ROW_TYPE_META = {
+    berth: { label: '碼頭', order: 1 },
+    buoy: { label: '浮桶', order: 2 },
+    anchorage: { label: '錨位', order: 3 },
+    barge: { label: '油泊船', order: 4 },
+}
+
 export default {
     name: 'DhtmlxGantt',
     data() {
@@ -123,6 +138,7 @@ export default {
             currentWeekStart: null,
             selectedYear: new Date().getFullYear(),
             selectedWeek: 1,
+            apiReadOnly: true,
             blockedRanges: [
                 { start: new Date(2025, 8, 30, 0, 0), end: new Date(2025, 9, 1, 0, 0) }
             ],
@@ -170,6 +186,264 @@ export default {
         },
     },
     methods: {
+        showReadOnlyNotice() {
+            alert('目前 API 為唯讀（僅支援 GET），無法新增或編輯資料。')
+        },
+        extractRows(payload) {
+            if (Array.isArray(payload)) return payload
+            if (Array.isArray(payload?.data)) return payload.data
+            return []
+        },
+        parseValidDate(value) {
+            if (value == null || value === '') return null
+            const dt = new Date(value)
+            return isNaN(dt) ? null : dt
+        },
+        getActivityRowInfo(activity) {
+            const berthIdRaw = activity?.berthId
+            const berthId = berthIdRaw == null ? '' : String(berthIdRaw).trim()
+
+            // 業務規則：berthId 與 actEnd 同時為 null 時視為錨地資料
+            if (activity?.berthId == null && activity?.actEnd == null) {
+                return { rowId: 'anchorage', rowText: '錨地', rowType: 'anchorage' }
+            }
+
+            // 業務規則：40 開頭且 4 位數為浮桶，其餘視為一般碼頭
+            const isBuoy = /^40\d{2}$/.test(berthId)
+            if (isBuoy) {
+                return { rowId: `buoy:${berthId}`, rowText: berthId, rowType: 'buoy' }
+            }
+            return { rowId: `berth:${berthId}`, rowText: berthId, rowType: 'berth' }
+        },
+        getBargeRowInfo(rawId) {
+            const id = String(rawId).trim()
+            if (!id) return null
+            return { rowId: `barge:${id}`, rowText: id, rowType: 'barge' }
+        },
+        buildBarLabel(item) {
+            const fuelParts = []
+            if (item.MFO180) fuelParts.push(`MFO180 ${item.MFO180}`)
+            if (item.MFO380) fuelParts.push(`MFO380 ${item.MFO380}`)
+            if (item.MGO) fuelParts.push(`MGO ${item.MGO}`)
+            const fuelText = fuelParts.join(' ')
+            return `${item.ship || ''}${fuelText ? ' ' + fuelText : ''}`.trim() || '未命名'
+        },
+        mapBerthActivitiesResponse(rows) {
+            const mapped = []
+            let anchorageIndex = 0
+            rows.forEach((item, rowIndex) => {
+                const label = this.buildBarLabel(item)
+                const acts = Array.isArray(item.activity) ? item.activity : []
+
+                acts.forEach((a, actIndex) => {
+                    let rowInfo = this.getActivityRowInfo(a)
+                    if (!rowInfo?.rowId) return
+
+                    if (rowInfo.rowType === 'anchorage') {
+                        anchorageIndex += 1
+                        rowInfo = {
+                            rowId: `anchorage:${anchorageIndex}`,
+                            rowText: String(anchorageIndex),
+                            rowType: 'anchorage',
+                        }
+                    }
+
+                    const actStart = this.parseValidDate(a?.actStart)
+                    const actEnd = this.parseValidDate(a?.actEnd)
+
+                    // 錨地資料可能無 actEnd，只保留 row 顯示，不繪製 bar
+                    const isAnchoragePlaceholder = rowInfo.rowType === 'anchorage' && actStart && !actEnd
+                    if (!isAnchoragePlaceholder) {
+                        if (!actStart || !actEnd || actEnd <= actStart) return
+                    }
+
+                    mapped.push({
+                        // 前端內部欄位
+                        id: `api_${rowIndex}_${actIndex}`,
+                        rowId: rowInfo.rowId,
+                        rowText: rowInfo.rowText,
+                        rowType: rowInfo.rowType,
+                        barLabel: label,
+                        actStart,
+                        actEnd,
+                        isAnchoragePlaceholder,
+                        // 保留 API 原始欄位，方便 tooltip/除錯
+                        sourceShip: item.ship || '',
+                        sourceMFO180: item.MFO180 || 0,
+                        sourceMFO380: item.MFO380 || 0,
+                        sourceMGO: item.MGO || 0,
+                        sourceBerthId: a.berthId == null ? '' : String(a.berthId),
+                        sourceActStart: a.actStart,
+                        sourceActEnd: a.actEnd,
+                    })
+                })
+            })
+            return mapped
+        },
+        mapBlockedRangesResponse(rows) {
+            return rows
+                .map(r => {
+                    const start = this.parseValidDate(r.start)
+                    const end = this.parseValidDate(r.end)
+                    const normalizedType = r.type || 'site'
+                    const appliesToAllRows = normalizedType === 'site'
+                    const appliesToAllBarge = normalizedType === 'barge' && (r.id == null || String(r.id).trim() === '')
+                    const bargeInfo = r.type === 'barge' && !appliesToAllBarge && r.id != null
+                        ? this.getBargeRowInfo(r.id)
+                        : null
+                    return {
+                        // 前端內部欄位
+                        start,
+                        end,
+                        appliesToAllRows,
+                        appliesToAllBarge,
+                        targetRowId: bargeInfo?.rowId || null,
+                        targetRowText: bargeInfo?.rowText || '',
+                        // API 原始欄位
+                        type: normalizedType,
+                        category: r.category || '',
+                        sourceId: r.id || null,
+                    }
+                })
+                .filter(r => {
+                    if (!r.start || !r.end || r.end <= r.start) return false
+                    if (r.type === 'site') return true
+                    if (r.type === 'barge') return r.appliesToAllBarge || !!r.targetRowId
+                    return false
+                })
+        },
+        isBlockedRangeApplicableToTask(range, task) {
+            if (range.appliesToAllRows) return true
+            if (task?.row_type !== 'barge') return false
+            if (range.appliesToAllBarge) return true
+            return !!(task?.id && range.targetRowId === task.id)
+        },
+        getBlockedSegmentsForCell(task, cellStartMs, cellEndMs) {
+            const segments = []
+            for (const r of this.blockedRanges) {
+                if (!this.isBlockedRangeApplicableToTask(r, task)) continue
+                const overlapStart = Math.max(cellStartMs, r.start.getTime())
+                const overlapEnd = Math.min(cellEndMs, r.end.getTime())
+                if (overlapEnd <= overlapStart) continue
+                segments.push([overlapStart, overlapEnd])
+            }
+            if (!segments.length) return []
+
+            segments.sort((a, b) => a[0] - b[0])
+            const merged = [segments[0]]
+            for (let i = 1; i < segments.length; i++) {
+                const prev = merged[merged.length - 1]
+                const cur = segments[i]
+                if (cur[0] <= prev[1]) {
+                    prev[1] = Math.max(prev[1], cur[1])
+                } else {
+                    merged.push(cur)
+                }
+            }
+            return merged
+        },
+        buildBlockedCellGradient(task, cellStartMs, cellEndMs) {
+            const duration = cellEndMs - cellStartMs
+            if (duration <= 0) return ''
+
+            const segments = this.getBlockedSegmentsForCell(task, cellStartMs, cellEndMs)
+            if (!segments.length) return ''
+
+            const toPct = value => Math.max(0, Math.min(100, ((value - cellStartMs) / duration) * 100))
+            const parts = []
+            let cursor = 0
+
+            for (const [start, end] of segments) {
+                const s = toPct(start)
+                const e = toPct(end)
+                if (s > cursor) {
+                    parts.push(`transparent ${cursor}% ${s}%`)
+                }
+                parts.push(`rgba(200, 30, 30, 0.14) ${s}% ${e}%`)
+                cursor = e
+            }
+
+            if (cursor < 100) {
+                parts.push(`transparent ${cursor}% 100%`)
+            }
+
+            return `linear-gradient(to right, ${parts.join(', ')})`
+        },
+        getVisibleBerthIdSet() {
+            const visible = new Map()
+            this.activities.forEach(act => {
+                if (act?.rowId && act?.rowText) {
+                    visible.set(act.rowId, {
+                        id: act.rowId,
+                        text: act.rowText,
+                        row_type: act.rowType || 'berth',
+                    })
+                }
+            })
+
+            this.blockedRanges.forEach(r => {
+                if (r?.targetRowId) {
+                    visible.set(r.targetRowId, {
+                        id: r.targetRowId,
+                        text: r.targetRowText || String(r.sourceId || ''),
+                        row_type: 'barge',
+                    })
+                }
+            })
+
+            return visible
+        },
+        buildVisibleBerthRows() {
+            const rows = Array.from(this.getVisibleBerthIdSet().values())
+            return rows
+                .sort((a, b) => {
+                    const orderA = ROW_TYPE_META[a.row_type]?.order || 99
+                    const orderB = ROW_TYPE_META[b.row_type]?.order || 99
+                    if (orderA !== orderB) return orderA - orderB
+                    return a.text.localeCompare(b.text, 'zh-Hant')
+                })
+                .map(r => ({
+                id: r.id,
+                text: r.text,
+                row_type: r.row_type,
+                start_date: new Date(2020, 0, 1),
+                end_date: new Date(2030, 11, 31),
+            }))
+        },
+        rebuildGanttRows() {
+            const rows = this.buildVisibleBerthRows()
+            gantt.clearAll()
+            gantt.parse({
+                data: rows,
+                links: [],
+            })
+        },
+        async loadActivitiesFromApi() {
+            try {
+                const res = await berthApiService.getBerthActivities()
+                const rows = this.extractRows(res)
+                this.activities = this.mapBerthActivitiesResponse(rows)
+            } catch (err) {
+                console.error('載入 berth-activities 失敗：', err)
+                this.activities = []
+            }
+        },
+        async loadBlockedRangesFromApi() {
+            try {
+                const res = await berthApiService.getBlockedRanges()
+                const rows = this.extractRows(res)
+                this.blockedRanges = this.mapBlockedRangesResponse(rows)
+            } catch (err) {
+                console.error('載入 blocked-ranges 失敗：', err)
+                this.blockedRanges = []
+            }
+        },
+        async loadWeekData() {
+            await Promise.all([
+                this.loadActivitiesFromApi(),
+                this.loadBlockedRangesFromApi(),
+            ])
+        },
         getISOWeekInfo(date) {
             const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
             const dayNum = d.getUTCDay() || 7
@@ -198,28 +472,28 @@ export default {
             this.selectedYear = info.year
             this.selectedWeek = info.week
         },
-        onYearWeekChange() {
+        async onYearWeekChange() {
             const total = this.getISOWeeksInYear(this.selectedYear)
             if (this.selectedWeek > total) this.selectedWeek = total
             if (this.selectedWeek < 1) this.selectedWeek = 1
             this.currentWeekStart = this.getISOWeekStart(this.selectedYear, this.selectedWeek)
-            this._applyWeek()
+            await this._applyWeek()
         },
-        prevWeek() {
+        async prevWeek() {
             const d = new Date(this.currentWeekStart)
             d.setDate(d.getDate() - 7)
             this.currentWeekStart = d
             this.syncYearWeekFromWeekStart()
-            this._applyWeek()
+            await this._applyWeek()
         },
-        nextWeek() {
+        async nextWeek() {
             const d = new Date(this.currentWeekStart)
             d.setDate(d.getDate() + 7)
             this.currentWeekStart = d
             this.syncYearWeekFromWeekStart()
-            this._applyWeek()
+            await this._applyWeek()
         },
-        goToday() {
+        async goToday() {
             const today = new Date()
             const dow = today.getDay()
             const daysToMon = dow === 0 ? 6 : dow - 1
@@ -228,13 +502,15 @@ export default {
             mon.setHours(0, 0, 0, 0)
             this.currentWeekStart = mon
             this.syncYearWeekFromWeekStart()
-            this._applyWeek()
+            await this._applyWeek()
         },
-        _applyWeek() {
+        async _applyWeek() {
             const ws = this.currentWeekStart
             const we = new Date(ws.getTime() + 7 * 86400000)
             gantt.config.start_date = ws
             gantt.config.end_date   = we
+            await this.loadWeekData()
+            this.rebuildGanttRows()
             gantt.render()
         },
         // ── 設定 Modal ──
@@ -261,6 +537,10 @@ export default {
             this.addVisible = true
         },
         saveAdd() {
+            if (this.apiReadOnly) {
+                this.showReadOnlyNotice()
+                return
+            }
             const f = this.addForm
             if (!f.section || !f.berth || !f.startDate || !f.endDate) {
                 alert('請填寫所有必填欄位')
@@ -355,17 +635,27 @@ export default {
         // ── Task 樣式：全部隱藏預設 bar，改在 onGanttRender 手動繪製 ──
         gantt.templates.task_class = () => 'hidden-bar'
         gantt.templates.task_text  = () => ''
-        gantt.templates.timeline_cell_class = (_task, date) => {
+        gantt.templates.timeline_cell_class = (task, date) => {
             const classes = []
-            const t = date.getTime()
-            for (const r of this.blockedRanges) {
-                if (t >= r.start.getTime() && t < r.end.getTime()) classes.push('blocked-period')
+            const cellStartMs = date.getTime()
+            const cellEndMs = cellStartMs + (this.timeIntervalHours * 60 * 60 * 1000)
+            const hasBlocked = this.getBlockedSegmentsForCell(task, cellStartMs, cellEndMs).length > 0
+
+            if (hasBlocked) {
+                classes.push('blocked-period')
             }
             if (date.getHours() === 0) classes.push('day-start')
             return classes.join(' ')
         }
+        gantt.templates.timeline_cell_content = (task, date) => {
+            const cellStartMs = date.getTime()
+            const cellEndMs = cellStartMs + (this.timeIntervalHours * 60 * 60 * 1000)
+            const gradient = this.buildBlockedCellGradient(task, cellStartMs, cellEndMs)
+            if (!gradient) return ''
+            return `<div class="blocked-cell-overlay" style="background:${gradient};"></div>`
+        }
     },
-    mounted() {
+    async mounted() {
         // ── Hover tooltip（掛在 body，避免被 gantt_data_area overflow 裁切）──
         const hoverTooltip = this._hoverTooltip = document.createElement('div')
         hoverTooltip.style.cssText = `
@@ -388,19 +678,31 @@ export default {
             const ganttRoot = this.$refs.dhtmlxGantt
             if (!ganttRoot) return
 
-            // ── Section overlay ──
+            // ── Section overlay（依可見列動態顯示：碼頭/錨位/浮桶/油泊船）──
             ganttRoot.querySelectorAll('.section-label-overlay').forEach(el => el.remove())
             const gridData = ganttRoot.querySelector('.gantt_grid_data')
             if (gridData) {
-                SECTIONS.forEach(({ name, ids }) => {
-                    const firstIdx = gantt.getTaskIndex(ids[0])
-                    if (firstIdx === -1) return
-                    const top    = gantt.getRowTop(firstIdx)
-                    const height = gantt.config.row_height * ids.length
+                const groups = []
+                for (let i = 0; i < gantt.getVisibleTaskCount(); i++) {
+                    const task = gantt.getTaskByIndex(i)
+                    const rowType = task?.row_type || 'berth'
+                    const last = groups[groups.length - 1]
+                    if (!last || last.rowType !== rowType) {
+                        groups.push({ rowType, startIndex: i, count: 1 })
+                    } else {
+                        last.count += 1
+                    }
+                }
+
+                groups.forEach(group => {
+                    const meta = ROW_TYPE_META[group.rowType]
+                    if (!meta) return
+                    const top = gantt.getRowTop(group.startIndex)
+                    const height = gantt.config.row_height * group.count
 
                     const el = document.createElement('div')
                     el.className = 'section-label-overlay'
-                    el.textContent = name
+                    el.textContent = meta.label
                     Object.assign(el.style, {
                         position:       'absolute',
                         left:           '0',
@@ -433,26 +735,32 @@ export default {
             const rh   = gantt.config.row_height
 
             this.activities.forEach(act => {
-                if (!act.actStart || !act.actEnd) return
+                if (!act.actStart) return
                 const s = act.actStart.getTime()
-                const e = act.actEnd.getTime()
-                if (e <= wsMs || s >= weMs) return // 活動完全在視窗外，不畫
+                const e = act.actEnd ? act.actEnd.getTime() : null
+                if (!act.isAnchoragePlaceholder) {
+                    if (!e) return
+                    if (e <= wsMs || s >= weMs) return // 活動完全在視窗外，不畫
+                } else {
+                    if (s < wsMs || s >= weMs) return
+                }
 
-                const idx = gantt.getTaskIndex(act.berthId)
+                const idx = gantt.getTaskIndex(act.rowId)
                 if (idx === -1) return
 
-                const left  = gantt.posFromDate(new Date(Math.max(s, wsMs)))
-                const right = gantt.posFromDate(new Date(Math.min(e, weMs)))
+                const left = gantt.posFromDate(new Date(Math.max(s, wsMs)))
+                const right = act.isAnchoragePlaceholder
+                    ? gantt.posFromDate(new Date(Math.min(s + (this.timeIntervalHours * 60 * 60 * 1000), weMs)))
+                    : gantt.posFromDate(new Date(Math.min(e, weMs)))
                 const width = right - left
                 if (width <= 0) return
 
                 const top = gantt.getRowTop(idx)
                 const pad = 3
 
-                // 依 berthId prefix 查對應 Section 顏色
-                const sec = SECTIONS.find(s => act.berthId.startsWith(s.prefix))
-                const barColor    = sec ? sec.color       : '#a8c8e8'
-                const borderColor = sec ? sec.borderColor : '#4a90c4'
+                const rowStyle = ROW_STYLES[act.rowType] || ROW_STYLES.berth
+                const barColor = rowStyle.color
+                const borderColor = rowStyle.borderColor
 
                 const bar = document.createElement('div')
                 bar.className = 'custom-act-bar'
@@ -476,11 +784,17 @@ export default {
                     whiteSpace: 'nowrap',
                     cursor:     'default',
                 })
+
+                if (act.isAnchoragePlaceholder) {
+                    bar.style.borderRadius = '2px'
+                }
                 const isLeftClipped  = s < wsMs
-                const isRightClipped = e > weMs
+                const isRightClipped = !act.isAnchoragePlaceholder && e > weMs
 
                 const lbl = document.createElement('span')
-                lbl.textContent = act.barLabel || ''
+                lbl.textContent = act.isAnchoragePlaceholder
+                    ? (act.sourceShip || act.barLabel || '錨地')
+                    : (act.barLabel || '')
                 lbl.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;'
                 bar.appendChild(lbl)
 
@@ -514,14 +828,15 @@ export default {
                     bar.appendChild(arrow)
                 }
                 // ── Hover tooltip 事件 ──
-                const secName = sec ? SECTIONS.find(s2 => s2.prefix === sec.prefix)?.name : ''
                 bar.addEventListener('mouseenter', () => {
                     const r = bar.getBoundingClientRect()
                     const lines = [
-                        `泊位：${secName} ${act.berthId}`,
+                        `船舶：${act.sourceShip || '—'}`,
+                        `泊位：${act.rowText || act.sourceBerthId || '—'}`,
+                        `油品：MFO180 ${act.sourceMFO180 || 0} / MFO380 ${act.sourceMFO380 || 0} / MGO ${act.sourceMGO || 0}`,
                         `標籤：${act.barLabel || '—'}`,
                         `開始：${this.fmtDt(act.actStart)}`,
-                        `結束：${this.fmtDt(act.actEnd)}`,
+                        `結束：${act.actEnd ? this.fmtDt(act.actEnd) : '未定'}`,
                     ].join('\n')
                     this.positionTooltip(hoverTooltip, r, lines)
                 })
@@ -533,47 +848,11 @@ export default {
             })
         })
 
-        // ── Mock 活動資料（模擬 GET /api/berth-activities 回傳）──
-        // 必須在 gantt.parse() 之前賦值，否則 parse 觸發 onGanttRender 時 activities 還是空陣列。
-        // 串接後端時，將此段替換為 API 呼叫，並將回傳的日期字串轉為 Date 物件。
-        const d = (m, day, h = 0) => new Date(2026, m - 1, day, h, 0)
-        this.activities = [
-            // 碼頭
-            { id: 'act_001', berthId: 'w1', barLabel: 'A船 MFO 70(L)',          actStart: d(4,1,6),  actEnd: d(4,2,0)  },
-            { id: 'act_002', berthId: 'w2', barLabel: 'B船 MFO 50(L)',          actStart: d(4,1,6),  actEnd: d(4,2,0)  },
-            { id: 'act_003', berthId: 'w3', barLabel: 'C船 MFO 45(L)',          actStart: d(4,1,6),  actEnd: d(4,2,0)  },
-            { id: 'act_004', berthId: 'w4', barLabel: 'D船 MFO 200(H) MGO 50', actStart: d(4,4,0),  actEnd: d(4,6,0)  },
-            { id: 'act_005', berthId: 'w5', barLabel: 'E船 MFO 40(L)',          actStart: d(4,4,0),  actEnd: d(4,5,0)  },
-            { id: 'act_006', berthId: 'w6', barLabel: 'F船 MFO 150(L)',         actStart: d(4,7,0),  actEnd: d(4,9,24) },
-            { id: 'act_007', berthId: 'w7', barLabel: 'G船 MFO 55(L)',          actStart: d(4,8,0),  actEnd: d(4,9,24) },
-            // 浮桶
-            { id: 'act_011', berthId: 'b1', barLabel: 'H船 MFO 225(L) MGO 40', actStart: d(4,5,0),  actEnd: d(4,8,24) },
-            { id: 'act_012', berthId: 'b2', barLabel: 'I船 MFO 125(L)',         actStart: d(4,4,0),  actEnd: d(4,6,24) },
-            // 錨地
-            { id: 'act_021', berthId: 'a1', barLabel: 'J船 MFO 2,000(H)',       actStart: d(4,1,0),  actEnd: d(4,2,0)  },
-            // 油駁船
-            { id: 'act_031', berthId: 't1', barLabel: '',                        actStart: d(4,1,0),  actEnd: d(4,1,12) },
-        ]
+        // 依當前週次載入 API 資料（需在 parse 前完成，確保首屏可畫出 bars）
+        await this.loadWeekData()
 
         gantt.init(this.$refs.dhtmlxGantt)
-        gantt.clearAll()
-
-        // ── 泊位列（靜態骨架，前端自維護；所有 task start/end 固定 2020-2030）──
-        // 後端不需提供此資料，僅提供 activities 清單。
-        const FOREVER = { start_date: new Date(2020, 0, 1), end_date: new Date(2030, 11, 31) }
-        gantt.parse({
-            data: [
-                // 碼頭 w1–w10
-                ...Array.from({ length: 10 }, (_, i) => ({ id: `w${i+1}`, text: String(i+1), ...FOREVER })),
-                // 浮桶 b1–b5
-                ...Array.from({ length: 5  }, (_, i) => ({ id: `b${i+1}`, text: String(i+1), ...FOREVER })),
-                // 錨地 a1–a5
-                ...Array.from({ length: 5  }, (_, i) => ({ id: `a${i+1}`, text: String(i+1), ...FOREVER })),
-                // 油駁船 t1–t3
-                ...Array.from({ length: 3  }, (_, i) => ({ id: `t${i+1}`, text: String(i+1), ...FOREVER })),
-            ],
-            links: []
-        })
+        this.rebuildGanttRows()
     },
     beforeDestroy() {
         if (this._hoverTooltip?.parentNode) this._hoverTooltip.parentNode.removeChild(this._hoverTooltip)
@@ -648,6 +927,11 @@ export default {
         border-color: #179b0b !important;
         &:hover { background: #188d0d !important; border-color: #188d0d !important; }
     }
+
+    &.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
 }
 
 .nav-timeinterval {
@@ -687,7 +971,13 @@ export default {
 
 /* 封鎖時段：紅色框遮罩 */
 .gantt_task_cell.blocked-period {
-    background-color: rgba(200, 30, 30, 0.06);
+    position: relative;
+}
+
+.gantt_task_cell .blocked-cell-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
 }
 
 /* ── Modal 共用 ── */
