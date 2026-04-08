@@ -551,7 +551,7 @@ export default {
                     // ── Hover tooltip ──
                     bar.addEventListener('mouseenter', () => {
                         const r = bar.getBoundingClientRect()
-                        this.positionTooltip(hoverTooltip, r, `項目: ${legendItem?.label ?? actType}  ${act.label}\n${this.fmtDt(act.start)} ~ ${this.fmtDt(act.end)}`)
+                        this.positionTooltip(hoverTooltip, r, `項目: ${legendItem?.label ?? actType}  ${act.label}\n開始: ${this.fmtDt(act.start)}\n結束: ${this.fmtDt(act.end)}`)
                     })
                     bar.addEventListener('mouseleave', () => {
                         hoverTooltip.style.display = 'none'
@@ -672,7 +672,7 @@ export default {
 
                                 // 使用 bar 的 viewport 座標定位（position:fixed）
                                 const barRect = bar.getBoundingClientRect()
-                                this.positionTooltip(tooltip, barRect, `項目: ${legendItem?.label ?? actType}  ${act.label}\n${this.fmtDt(newStart)} ~ ${this.fmtDt(newEnd)}`)
+                                this.positionTooltip(tooltip, barRect, `項目: ${legendItem?.label ?? actType}  ${act.label}\n開始: ${this.fmtDt(newStart)}\n結束: ${this.fmtDt(newEnd)}`)
                             }
 
                             const onMove = ev => {
@@ -1022,7 +1022,7 @@ export default {
         // ── 工具方法（從 mounted 閃住優抽出）──
         fmtDt(dt) {
             const p = n => String(n).padStart(2, '0')
-            return `${p(dt.getMonth()+1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`
+            return `${dt.getFullYear()}/${p(dt.getMonth()+1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`
         },
         positionTooltip(tooltipEl, anchorRect, text) {
             const pad = 8

@@ -287,6 +287,28 @@ export default {
             gantt.render()
             this.addVisible = false
         },
+        fmtDt(dt) {
+            const p = n => String(n).padStart(2, '0')
+            return `${dt.getFullYear()}/${p(dt.getMonth()+1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`
+        },
+        positionTooltip(tooltipEl, anchorRect, text) {
+            const pad = 8
+            tooltipEl.innerHTML = text.replace(/\n/g, '<br>')
+            tooltipEl.style.transform = 'none'
+            tooltipEl.style.visibility = 'hidden'
+            tooltipEl.style.display = 'block'
+            const t = tooltipEl.getBoundingClientRect()
+            let left = anchorRect.left + anchorRect.width / 2 - t.width / 2
+            left = Math.max(pad, Math.min(left, window.innerWidth - t.width - pad))
+            let top = anchorRect.top - t.height - pad
+            if (top < pad) top = anchorRect.bottom + pad
+            if (top + t.height > window.innerHeight - pad) {
+                top = Math.max(pad, window.innerHeight - t.height - pad)
+            }
+            tooltipEl.style.left = `${Math.round(left)}px`
+            tooltipEl.style.top = `${Math.round(top)}px`
+            tooltipEl.style.visibility = 'visible'
+        },
     },
     created() {
         // ── 初始週範圍（以今日為基準）──
@@ -344,6 +366,23 @@ export default {
         }
     },
     mounted() {
+        // ── Hover tooltip（掛在 body，避免被 gantt_data_area overflow 裁切）──
+        const hoverTooltip = this._hoverTooltip = document.createElement('div')
+        hoverTooltip.style.cssText = `
+            position:fixed;
+            background:rgba(30,30,30,0.82);
+            color:#fff;
+            font-size:14px;
+            padding:6px 12px;
+            border-radius:4px;
+            white-space:pre;
+            pointer-events:none;
+            z-index:9998;
+            box-shadow:0 2px 6px rgba(0,0,0,0.28);
+            display:none;
+        `
+        document.body.appendChild(hoverTooltip)
+
         // ── Section label overlay + 手動繪製 activity bar ──
         gantt.attachEvent('onGanttRender', () => {
             const ganttRoot = this.$refs.dhtmlxGantt
@@ -417,7 +456,6 @@ export default {
 
                 const bar = document.createElement('div')
                 bar.className = 'custom-act-bar'
-                bar.textContent = act.barLabel || ''
                 Object.assign(bar.style, {
                     position:   'absolute',
                     left:       `${left}px`,
@@ -435,9 +473,62 @@ export default {
                     boxSizing:  'border-box',
                     borderRadius: '2px',
                     zIndex:     '5',
-                    pointerEvents: 'none',
                     whiteSpace: 'nowrap',
+                    cursor:     'default',
                 })
+                const isLeftClipped  = s < wsMs
+                const isRightClipped = e > weMs
+
+                const lbl = document.createElement('span')
+                lbl.textContent = act.barLabel || ''
+                lbl.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;'
+                bar.appendChild(lbl)
+
+                // 跨週箭頭：CSS 三角形，position:absolute 貼於 bar 內側邊緣
+                if (isLeftClipped) {
+                    const arrow = document.createElement('div')
+                    arrow.style.cssText = `
+                        position:absolute; left:3px; top:50%;
+                        transform:translateY(-50%);
+                        width:0; height:0;
+                        border-top:7px solid transparent;
+                        border-bottom:7px solid transparent;
+                        border-right:9px solid ${borderColor};
+                        pointer-events:none;
+                        z-index:6;
+                    `
+                    bar.appendChild(arrow)
+                }
+                if (isRightClipped) {
+                    const arrow = document.createElement('div')
+                    arrow.style.cssText = `
+                        position:absolute; right:3px; top:50%;
+                        transform:translateY(-50%);
+                        width:0; height:0;
+                        border-top:7px solid transparent;
+                        border-bottom:7px solid transparent;
+                        border-left:9px solid ${borderColor};
+                        pointer-events:none;
+                        z-index:6;
+                    `
+                    bar.appendChild(arrow)
+                }
+                // ── Hover tooltip 事件 ──
+                const secName = sec ? SECTIONS.find(s2 => s2.prefix === sec.prefix)?.name : ''
+                bar.addEventListener('mouseenter', () => {
+                    const r = bar.getBoundingClientRect()
+                    const lines = [
+                        `泊位：${secName} ${act.berthId}`,
+                        `標籤：${act.barLabel || '—'}`,
+                        `開始：${this.fmtDt(act.actStart)}`,
+                        `結束：${this.fmtDt(act.actEnd)}`,
+                    ].join('\n')
+                    this.positionTooltip(hoverTooltip, r, lines)
+                })
+                bar.addEventListener('mouseleave', () => {
+                    hoverTooltip.style.display = 'none'
+                })
+
                 barsArea.appendChild(bar)
             })
         })
@@ -484,7 +575,9 @@ export default {
             links: []
         })
     },
-    beforeDestroy() {}
+    beforeDestroy() {
+        if (this._hoverTooltip?.parentNode) this._hoverTooltip.parentNode.removeChild(this._hoverTooltip)
+    },
 }
 </script>
 
