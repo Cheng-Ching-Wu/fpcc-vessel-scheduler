@@ -19,7 +19,8 @@
         <div class="dhtmlx-gantt" :class="{ 'loading-state': isLoading }">
             <div ref="dhtmlxGantt" class="dhtmlx-gantt-host" v-show="!hasNoWeekData" style="width: 100%;"></div>
             <div v-if="hasNoWeekData && !isLoading" class="no-data-panel">
-                <span>暫無資料</span>
+                <span class="material-symbols-outlined no-data-icon">anchor</span>
+                <span class="no-data-string">暫無資料</span>
             </div>
             <transition name="loading-fade">
                 <div v-if="isLoading" class="gantt-loading-overlay" :style="{ height: overlayHeight + 'px' }">
@@ -841,6 +842,9 @@ export default {
         }
     },
     beforeDestroy() {
+        // dhtmlx-gantt 為全域單例，切頁前清理可避免下一頁 gantt 畫面失效。
+        if (typeof gantt.clearAll === 'function') gantt.clearAll()
+        if (typeof gantt.detachAllEvents === 'function') gantt.detachAllEvents()
         if (this._hoverTooltip?.parentNode) this._hoverTooltip.parentNode.removeChild(this._hoverTooltip)
     },
 }

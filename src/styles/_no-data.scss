@@ -3,16 +3,25 @@
 .no-data-panel {
   height: 350px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  font-weight: 600;
   background: $color-bg-no-data;
   border: 1px solid $color-border-soft;
 
   span {
-    font-size: 1.5em;
-    font-weight: 900;
-    color: $color-text-faded;
+    font-size: 2em;
+    color: $color-grey-light;
+
+    &.no-data-string {
+      font-weight: 600;
+    }
+
+    &.no-data-icon {
+      font-size: 5em;
+      margin-bottom: 10px;
+      color: $color-grey-light;
+    }
   }
 }

@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import DhtmlxGantt from '@/components/dhtmlxGantt.vue'
-import PlanGantt from '@/components/PlanGantt.vue'
+import DhtmlxGantt from '@/pages/dhtmlxGantt.vue'
+import PlanGantt from '@/pages/PlanGantt.vue'
+import GoogleIconsDemo from '@/pages/GoogleIconsDemo.vue'
 
 Vue.use(VueRouter)
 
@@ -15,6 +16,11 @@ const routes = [
     path: '/DhtmlxGantt',
     name: 'DhtmlxGantt',
     component: DhtmlxGantt
+  },
+  {
+    path: '/google-icons',
+    name: 'GoogleIconsDemo',
+    component: GoogleIconsDemo
   },
 ]
 

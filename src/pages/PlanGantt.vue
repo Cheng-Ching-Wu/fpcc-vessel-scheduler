@@ -129,7 +129,7 @@
 <script>
 import { gantt } from 'dhtmlx-gantt'
 import 'dhtmlx-gantt/codebase/dhtmlxgantt.css'
-import SettingsModal from './SettingsModal.vue'
+import SettingsModal from '@/components/SettingsModal.vue'
 import { getSettings, initializeSettings } from '@/appSettings'
 
 // 船隻群組（vessel label overlay 用）
@@ -785,6 +785,10 @@ export default {
         }, { capture: true })
     },
     beforeDestroy() {
+        // dhtmlx-gantt 是全域單例，離開頁面時需清除事件與資料，
+        // 否則切換到其他 gantt 頁面可能互相污染導致畫面空白。
+        if (typeof gantt.clearAll === 'function') gantt.clearAll()
+        if (typeof gantt.detachAllEvents === 'function') gantt.detachAllEvents()
         if (this._hoverTooltip?.parentNode) this._hoverTooltip.parentNode.removeChild(this._hoverTooltip)
     },
     computed: {
