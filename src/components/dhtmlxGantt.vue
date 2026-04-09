@@ -22,7 +22,7 @@
                 <span>暫無資料</span>
             </div>
             <transition name="loading-fade">
-                <div v-if="isLoading" class="gantt-loading-overlay">
+                <div v-if="isLoading" class="gantt-loading-overlay" :style="{ height: overlayHeight + 'px' }">
                     <div class="gantt-spinner"></div>
                 </div>
             </transition>
@@ -121,7 +121,7 @@ const SECTIONS = [
     { name: '碼頭',  prefix: 'w', ids: ['w1','w2','w3','w4','w5','w6','w7','w8','w9','w10'], color: '#a8c8e8', borderColor: '#4a90c4' },
     { name: '浮桶',  prefix: 'b', ids: ['b1','b2','b3','b4','b5'],                            color: '#e8b87a', borderColor: '#c07030' },
     { name: '錨地',  prefix: 'a', ids: ['a1','a2','a3','a4','a5'],                            color: '#f0b0c8', borderColor: '#c03070' },
-    { name: '油駁船', prefix: 't', ids: ['t1','t2','t3'],                                      color: '#c03030', borderColor: '#900000' },
+    { name: '油駁船', prefix: 't', ids: ['t1','t2','t3'],                                      color: '#f6c2c2', borderColor: '#900000' },
 ]
 
 const ROW_STYLES = {
@@ -149,9 +149,8 @@ export default {
             hasNoWeekData: true,
             apiLoadFailed: false,
             isLoading: false,
-            blockedRanges: [
-                { start: new Date(2025, 8, 30, 0, 0), end: new Date(2025, 9, 1, 0, 0) }
-            ],
+            overlayHeight: 350,
+            blockedRanges: [],
             timeIntervalHours: 6,
             // 活動資料（對應後端 GET /api/berth-activities 回傳）
             activities: [],
@@ -216,6 +215,11 @@ export default {
             // 業務規則：berthId 與 actEnd 同時為 null 時視為錨地資料
             if (activity?.berthId == null && activity?.actEnd == null) {
                 return { rowId: 'anchorage', rowText: '錨地', rowType: 'anchorage' }
+            }
+
+            // 業務規則：'t' 開頭為油駁船
+            if (berthId.startsWith('t')) {
+                return { rowId: `barge:${berthId}`, rowText: berthId, rowType: 'barge' }
             }
 
             // 業務規則：40 開頭且 4 位數為浮桶，其餘視為一般碼頭
@@ -369,7 +373,7 @@ export default {
                 if (s > cursor) {
                     parts.push(`transparent ${cursor}% ${s}%`)
                 }
-                parts.push(`rgba(200, 30, 30, 0.14) ${s}% ${e}%`)
+                parts.push(`var(--blocked-overlay-color) ${s}% ${e}%`)
                 cursor = e
             }
 
@@ -455,6 +459,12 @@ export default {
         },
         async loadWeekData() {
             this.apiLoadFailed = false
+            try {
+                const rows = gantt.getVisibleTaskCount()
+                this.overlayHeight = rows * gantt.config.row_height + gantt.config.scale_height
+            } catch {
+                this.overlayHeight = 350
+            }
             this.isLoading = true
             try {
                 await Promise.all([
@@ -680,19 +690,7 @@ export default {
     async mounted() {
         // ── Hover tooltip（掛在 body，避免被 gantt_data_area overflow 裁切）──
         const hoverTooltip = this._hoverTooltip = document.createElement('div')
-        hoverTooltip.style.cssText = `
-            position:fixed;
-            background:rgba(30,30,30,0.82);
-            color:#fff;
-            font-size:14px;
-            padding:6px 12px;
-            border-radius:4px;
-            white-space:pre;
-            pointer-events:none;
-            z-index:9998;
-            box-shadow:0 2px 6px rgba(0,0,0,0.28);
-            display:none;
-        `
+        hoverTooltip.className = 'gantt-hover-tooltip'
         document.body.appendChild(hoverTooltip)
 
         // ── Section label overlay + 手動繪製 activity bar ──
@@ -726,23 +724,8 @@ export default {
                     el.className = 'section-label-overlay'
                     el.textContent = meta.label
                     Object.assign(el.style, {
-                        position:       'absolute',
-                        left:           '0',
-                        top:            `${top}px`,
-                        width:          '50px',
-                        height:         `${height}px`,
-                        display:        'flex',
-                        alignItems:     'center',
-                        justifyContent: 'center',
-                        writingMode:    'vertical-rl',
-                        fontWeight:     'bold',
-                        fontSize:       '13px',
-                        backgroundColor:'#e8f0f8',
-                        borderRight:    '1px solid #b0c4de',
-                        borderBottom:   '2px solid #7a9abf',
-                        zIndex:         '10',
-                        pointerEvents:  'none',
-                        boxSizing:      'border-box',
+                        top:    `${top}px`,
+                        height: `${height}px`,
                     })
                     gridData.appendChild(el)
                 })
@@ -790,25 +773,14 @@ export default {
                 const bar = document.createElement('div')
                 bar.className = 'custom-act-bar'
                 Object.assign(bar.style, {
-                    position:   'absolute',
                     left:       `${left}px`,
                     top:        `${top + pad}px`,
                     width:      `${width}px`,
                     height:     `${rh - pad * 2}px`,
                     background: barColor,
                     border:     `2px solid ${borderColor}`,
-                    color:      '#333',
-                    fontSize:   '12px',
-                    display:    'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow:   'hidden',
-                    boxSizing:  'border-box',
-                    borderRadius: '2px',
-                    zIndex:     '5',
-                    whiteSpace: 'nowrap',
-                    cursor:     'default',
                 })
+                bar.style.setProperty('--bar-border-color', borderColor)
 
                 if (act.isAnchoragePlaceholder) {
                     bar.style.borderRadius = '2px'
@@ -817,39 +789,21 @@ export default {
                 const isRightClipped = !act.isAnchoragePlaceholder && e > weMs
 
                 const lbl = document.createElement('span')
+                lbl.className = 'bar-label'
                 lbl.textContent = act.isAnchoragePlaceholder
                     ? (act.sourceShip || act.barLabel || '錨地')
                     : (act.barLabel || '')
-                lbl.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;'
                 bar.appendChild(lbl)
 
                 // 跨週箭頭：CSS 三角形，position:absolute 貼於 bar 內側邊緣
                 if (isLeftClipped) {
                     const arrow = document.createElement('div')
-                    arrow.style.cssText = `
-                        position:absolute; left:3px; top:50%;
-                        transform:translateY(-50%);
-                        width:0; height:0;
-                        border-top:7px solid transparent;
-                        border-bottom:7px solid transparent;
-                        border-right:9px solid ${borderColor};
-                        pointer-events:none;
-                        z-index:6;
-                    `
+                    arrow.className = 'bar-arrow bar-arrow--left'
                     bar.appendChild(arrow)
                 }
                 if (isRightClipped) {
                     const arrow = document.createElement('div')
-                    arrow.style.cssText = `
-                        position:absolute; right:3px; top:50%;
-                        transform:translateY(-50%);
-                        width:0; height:0;
-                        border-top:7px solid transparent;
-                        border-bottom:7px solid transparent;
-                        border-left:9px solid ${borderColor};
-                        pointer-events:none;
-                        z-index:6;
-                    `
+                    arrow.className = 'bar-arrow bar-arrow--right'
                     bar.appendChild(arrow)
                 }
                 // ── Hover tooltip 事件 ──
@@ -892,6 +846,23 @@ export default {
 }
 </script>
 
+<style>
+/* hoverTooltip 掛在 body 上，無法使用 scoped，需要全域樣式 */
+.gantt-hover-tooltip {
+    position: fixed;
+    background: rgba(30, 30, 30, 0.82);
+    color: #fff;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    white-space: pre;
+    pointer-events: none;
+    z-index: 9998;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+    display: none;
+}
+</style>
+
 <style lang="scss" scoped>
 
 .dhtmlx-gantt-wrapper {
@@ -910,29 +881,121 @@ export default {
     min-height: 350px;
 }
 
-.hidden-bar {
+.gantt-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 20;
+}
+
+.gantt-spinner {
+    width: 36px;
+    height: 36px;
+    border: 4px solid #d0d0d0;
+    border-top-color: #4a90c4;
+    border-radius: 50%;
+    animation: gantt-spin 0.7s linear infinite;
+}
+
+@keyframes gantt-spin {
+    to { transform: rotate(360deg); }
+}
+
+:deep(.hidden-bar) {
     display: none !important;
 }
 
 /* 泊位數字向右偏移，避免被 section overlay 蓋住 */
-.dhtmlx-gantt .gantt_grid_data .gantt_row .gantt_cell {
+:deep(.gantt_grid_data .gantt_row .gantt_cell) {
     padding-left: 52px !important;
 }
 
 /* 每天起始格加粗左邊框 */
-.gantt_task_cell.day-start {
+:deep(.gantt_task_cell.day-start) {
     border-left: 1px solid $color-text-hint !important;
 }
 
-/* 封鎖時段：紅色框遮罩 */
-.gantt_task_cell.blocked-period {
+/* 封鎖時段：紅色遮罩（dhtmlx DOM 需用 :deep 才會命中） */
+:deep(.gantt_task_cell.blocked-period) {
     position: relative;
 }
 
-.gantt_task_cell .blocked-cell-overlay {
+:deep(.gantt_task_cell .blocked-cell-overlay) {
+    --blocked-overlay-color: #{$color-blocked-overlay};
     position: absolute;
     inset: 0;
     pointer-events: none;
+    z-index: 2;
+}
+
+/* ── Section label overlay ── */
+:deep(.section-label-overlay) {
+    position: absolute;
+    left: 0;
+    width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    font-weight: bold;
+    font-size: 13px;
+    background-color: #e8f0f8;
+    border-right: 1px solid #b0c4de;
+    border-bottom: 2px solid #7a9abf;
+    z-index: 10;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+/* ── Activity bar ── */
+:deep(.custom-act-bar) {
+    --bar-border-color: transparent;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-sizing: border-box;
+    border-radius: 2px;
+    z-index: 5;
+    color: #333;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: default;
+}
+
+:deep(.bar-label) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+:deep(.bar-arrow) {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    pointer-events: none;
+    z-index: 6;
+}
+
+:deep(.bar-arrow--left) {
+    left: 3px;
+    border-right: 9px solid var(--bar-border-color);
+}
+
+:deep(.bar-arrow--right) {
+    right: 3px;
+    border-left: 9px solid var(--bar-border-color);
 }
 
 .modal-dialog {

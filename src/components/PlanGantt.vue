@@ -339,19 +339,7 @@ export default {
     mounted() {
         // Hover tooltip（需 DOM 存在才建立）
         const hoverTooltip = this._hoverTooltip = document.createElement('div')
-        hoverTooltip.style.cssText = `
-            position:fixed;
-            background:rgba(30,30,30,0.82);
-            color:#fff;
-            font-size: 16px;
-            padding:6px 12px;
-            border-radius:4px;
-            white-space:pre;
-            pointer-events:none;
-            z-index:9998;
-            box-shadow:0 2px 6px rgba(0,0,0,0.28);
-            display:none;
-        `
+        hoverTooltip.className = 'plan-gantt-hover-tooltip'
         document.body.appendChild(hoverTooltip)
 
         // focus 狀態追蹤（跨 re-render 保留，以 instance property 存放）
@@ -382,23 +370,8 @@ export default {
                     el.className  = 'vessel-label-overlay'
                     el.textContent = name
                     Object.assign(el.style, {
-                        position:       'absolute',
-                        left:           '0',
-                        top:            `${top}px`,
-                        width:          '52px',
-                        height:         `${height}px`,
-                        display:        'flex',
-                        alignItems:     'center',
-                        justifyContent: 'center',
-                        writingMode:    'vertical-rl',
-                        fontWeight:     'bold',
-                        fontSize:       '13px',
-                        backgroundColor:'#e8f0f8',
-                        borderRight:    '1px solid #b0c4de',
-                        borderBottom:   '2px solid #7a9abf',
-                        zIndex:         '10',
-                        pointerEvents:  'none',
-                        boxSizing:      'border-box',
+                        top:    `${top}px`,
+                        height: `${height}px`,
                     })
                     gridData.appendChild(el)
 
@@ -490,62 +463,37 @@ export default {
                         background:${typeColor};
                         border:2px solid ${typeBorder};
                         color:${typeBorder};
+                        --bar-border-color:${typeBorder};
                     `
                     // 儲存邊框色，re-render 後若此 act 仍被 focus 就還原樣式
                     bar.dataset.borderColor = typeBorder
                     if (act === this._focusedAct) this.applyFocusStyle(bar)
 
                     const labelEl = document.createElement('span')
+                    labelEl.className = 'bar-label'
                     labelEl.textContent = act.label
-                    labelEl.style.cssText = 'pointer-events:none; overflow:hidden; white-space:nowrap; font-weight:900;'
                     bar.appendChild(labelEl)
 
                     // 跨週箭頭指示器（置於 bar 內側邊緣，避免被 gantt_data_area overflow:hidden 裁掉）
                     if (isLeftClipped) {
                         const arrow = document.createElement('div')
-                        arrow.style.cssText = `
-                            position:absolute; left:3px; top:50%;
-                            transform:translateY(-50%);
-                            width:0; height:0;
-                            border-top:7px solid transparent;
-                            border-bottom:7px solid transparent;
-                            border-right:9px solid ${typeBorder};
-                            pointer-events:none;
-                            z-index:6;
-                        `
+                        arrow.className = 'bar-arrow bar-arrow--left'
                         bar.appendChild(arrow)
                     }
                     if (isRightClipped) {
                         const arrow = document.createElement('div')
-                        arrow.style.cssText = `
-                            position:absolute; right:3px; top:50%;
-                            transform:translateY(-50%);
-                            width:0; height:0;
-                            border-top:7px solid transparent;
-                            border-bottom:7px solid transparent;
-                            border-left:9px solid ${typeBorder};
-                            pointer-events:none;
-                            z-index:6;
-                        `
+                        arrow.className = 'bar-arrow bar-arrow--right'
                         bar.appendChild(arrow)
                     }
 
                     // 左側縮放把手（跨週裁切側仍加，可調整週外時間）
                     const lHandle = document.createElement('div')
                     lHandle.className = 'bar-resize-handle bar-resize-left'
-                    lHandle.style.cssText = `
-                        position:absolute; left:0; top:0; bottom:0;
-                        width:8px; cursor:w-resize; z-index:7;
-                    `
                     bar.appendChild(lHandle)
 
                     // 右側縮放把手（跨週裁切側仍加，可調整週外時間）
                     const rHandle = document.createElement('div')
                     rHandle.className = 'bar-resize-handle bar-resize-right'
-                    rHandle.style.cssText = `
-                        position:absolute; right:0; top:0; bottom:0;
-                        width:8px; cursor:e-resize; z-index:7;
-                    `
                     bar.appendChild(rHandle)
 
                     // ── Hover tooltip ──
@@ -597,21 +545,12 @@ export default {
                                 ghostBar = document.createElement('div')
                                 ghostBar.className = 'custom-act-bar custom-act-bar-ghost'
                                 ghostBar.style.cssText = `
-                                    position:absolute;
                                     left:${startLeft}px;
                                     width:${Math.max(parseFloat(bar.style.width), 30)}px;
                                     top:${startTop}px;
                                     height:${parseFloat(bar.style.height)}px;
                                     background:${typeColor};
                                     border:2px solid ${typeBorder};
-                                    border-radius:2px;
-                                    display:flex;
-                                    align-items:center;
-                                    justify-content:center;
-                                    font-size: 1.15em;
-                                    opacity:0.5;
-                                    pointer-events:none;
-                                    z-index:4;
                                 `
                                 dataArea.appendChild(ghostBar)
                             }
@@ -621,18 +560,6 @@ export default {
                             // 建立 tooltip（掛在 body，避免被 dataArea overflow 裁切）
                             const tooltip = document.createElement('div')
                             tooltip.className = 'drag-tooltip'
-                            tooltip.style.cssText = `
-                                position:fixed;
-                                background:rgba(30,30,30,0.82);
-                                color:#fff;
-                                font-size:16px;
-                                padding:6px 12px;
-                                border-radius:4px;
-                                white-space:pre;
-                                pointer-events:none;
-                                z-index:9999;
-                                box-shadow:0 2px 6px rgba(0,0,0,0.28);
-                            `
                             document.body.appendChild(tooltip)
 
                             const updateTooltip = () => {
@@ -1282,6 +1209,36 @@ export default {
 }
 </script>
 
+<style>
+/* hoverTooltip 與 drag tooltip 掛在 body 上，無法使用 scoped，需要全域樣式 */
+.plan-gantt-hover-tooltip {
+    position: fixed;
+    background: rgba(30, 30, 30, 0.82);
+    color: #fff;
+    font-size: 16px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    white-space: pre;
+    pointer-events: none;
+    z-index: 9998;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+    display: none;
+}
+
+.drag-tooltip {
+    position: fixed;
+    background: rgba(30, 30, 30, 0.82);
+    color: #fff;
+    font-size: 16px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    white-space: pre;
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+}
+</style>
+
 <style lang="scss" scoped>
 
 .plan-gantt-wrapper {
@@ -1338,7 +1295,7 @@ export default {
     flex: 1;
 }
 
-.hidden-bar { display: none !important; }
+:deep(.hidden-bar) { display: none !important; }
 
 :deep(.gantt-row-hidden) {
     height: 0 !important;
@@ -1349,23 +1306,42 @@ export default {
 }
 
 /* 資料列文字向右偏移，避免被 vessel overlay 蓋住 */
-:deep(.plan-gantt .gantt_grid_data .gantt_row .gantt_cell) {
+:deep(.gantt_grid_data .gantt_row .gantt_cell) {
     padding-left: 0 !important;
 }
 
 /* 只偏移文字內容，保留 dhtmlx 原生 tree/子項目縮排 */
-:deep(.plan-gantt .gantt_grid_data .gantt_row .gantt_cell .gantt_tree_content) {
+:deep(.gantt_tree_content) {
     margin-left: 52px;
 }
 
 /* 表頭：向右偏移並確保左側背景為白色 */
-.plan-gantt .gantt_grid_head_cell {
+:deep(.gantt_grid_head_cell) {
     padding: 0 26px !important;
     background: $color-white !important;
 }
 
-.gantt_task_cell.day-start {
+:deep(.gantt_task_cell.day-start) {
     border-left: 1px solid $color-text-hint !important;
+}
+
+/* ── Vessel label overlay ── */
+:deep(.vessel-label-overlay) {
+    position: absolute;
+    left: 0;
+    width: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    writing-mode: vertical-rl;
+    font-weight: bold;
+    font-size: 13px;
+    background-color: #e8f0f8;
+    border-right: 1px solid #b0c4de;
+    border-bottom: 2px solid #7a9abf;
+    z-index: 10;
+    pointer-events: none;
+    box-sizing: border-box;
 }
 
 :deep(.custom-act-bar) {
@@ -1383,6 +1359,64 @@ export default {
     z-index: 5;
     border-radius: 5px;
     transition: box-shadow 0.12s;
+}
+
+/* ghost bar：覆蓋部分 custom-act-bar 樣式 */
+:deep(.custom-act-bar-ghost) {
+    border-radius: 2px;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 4;
+}
+
+/* bar 內文字標籤 */
+:deep(.bar-label) {
+    pointer-events: none;
+    overflow: hidden;
+    white-space: nowrap;
+    font-weight: 900;
+}
+
+/* 跨週箭頭 */
+:deep(.bar-arrow) {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    pointer-events: none;
+    z-index: 6;
+}
+
+:deep(.bar-arrow--left) {
+    left: 3px;
+    border-right: 9px solid var(--bar-border-color);
+}
+
+:deep(.bar-arrow--right) {
+    right: 3px;
+    border-left: 9px solid var(--bar-border-color);
+}
+
+/* 縮放把手 */
+:deep(.bar-resize-handle) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    z-index: 7;
+}
+
+:deep(.bar-resize-left) {
+    left: 0;
+    cursor: w-resize;
+}
+
+:deep(.bar-resize-right) {
+    right: 0;
+    cursor: e-resize;
 }
 
 /* 跨週裁切指示器：裁切側移除邊框與圓角 */
