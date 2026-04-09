@@ -30,14 +30,14 @@
 
         <!-- 設定 Modal -->
         <transition name="modal-fade">
-            <div v-if="settingsVisible" class="dg-modal-overlay" @click.self="settingsVisible = false">
-                <div class="dg-modal-dialog">
-                    <div class="dg-modal-header">
+            <div v-if="settingsVisible" class="modal-overlay" @click.self="settingsVisible = false">
+                <div class="modal-dialog">
+                    <div class="modal-header">
                         <span>甘特圖設定</span>
-                        <button class="dg-modal-close" @click="settingsVisible = false">✕</button>
+                        <button class="modal-close" @click="settingsVisible = false">✕</button>
                     </div>
-                    <div class="dg-modal-body">
-                        <div class="dg-form-row">
+                    <div class="modal-body">
+                        <div class="form-row">
                             <label>時間間隔（小時）</label>
                             <select v-model.number="settingsForm.timeIntervalHours">
                                 <option :value="1">1 小時</option>
@@ -49,12 +49,12 @@
                                 <option :value="12">12 小時</option>
                                 <option :value="24">24 小時</option>
                             </select>
-                            <span class="dg-hint">（當前：{{ timeIntervalHours }} 小時/格）</span>
+                            <span class="form-hint">（當前：{{ timeIntervalHours }} 小時/格）</span>
                         </div>
                     </div>
-                    <div class="dg-modal-footer">
-                        <button class="dg-btn-cancel" @click="settingsVisible = false">取消</button>
-                        <button class="dg-btn-save" @click="saveSettings">儲存設定</button>
+                    <div class="modal-footer">
+                        <button class="btn-cancel" @click="settingsVisible = false">取消</button>
+                        <button class="btn-save" @click="saveSettings">儲存設定</button>
                     </div>
                 </div>
             </div>
@@ -62,39 +62,39 @@
 
         <!-- 新增 Modal -->
         <transition name="modal-fade">
-            <div v-if="addVisible" class="dg-modal-overlay" @click.self="addVisible = false">
-                <div class="dg-modal-dialog">
-                    <div class="dg-modal-header">
+            <div v-if="addVisible" class="modal-overlay" @click.self="addVisible = false">
+                <div class="modal-dialog">
+                    <div class="modal-header">
                         <span>新增泊位活動</span>
-                        <button class="dg-modal-close" @click="addVisible = false">✕</button>
+                        <button class="modal-close" @click="addVisible = false">✕</button>
                     </div>
-                    <div class="dg-modal-body">
-                        <div class="dg-form-row">
+                    <div class="modal-body">
+                        <div class="form-row">
                             <label>區域</label>
                             <select v-model="addForm.section" @change="addForm.berth = ''">
                                 <option value="">請選擇</option>
                                 <option v-for="s in sectionOptions" :key="s.prefix" :value="s.prefix">{{ s.name }}</option>
                             </select>
                         </div>
-                        <div class="dg-form-row">
+                        <div class="form-row">
                             <label>泊位</label>
                             <select v-model="addForm.berth" :disabled="!addForm.section">
                                 <option value="">請選擇</option>
                                 <option v-for="n in berthOptions" :key="n" :value="String(n)">{{ n }}</option>
                             </select>
                         </div>
-                        <div class="dg-form-row">
+                        <div class="form-row">
                             <label>標籤</label>
                             <input type="text" v-model="addForm.barLabel" placeholder="請輸入標籤" />
                         </div>
-                        <div class="dg-form-row">
+                        <div class="form-row">
                             <label>開始時間</label>
                             <input type="date" v-model="addForm.startDate" />
                             <select v-model="addForm.startTime">
                                 <option v-for="t in timeOptions" :key="t" :value="t">{{ t }}</option>
                             </select>
                         </div>
-                        <div class="dg-form-row">
+                        <div class="form-row">
                             <label>結束時間</label>
                             <input type="date" v-model="addForm.endDate" />
                             <select v-model="addForm.endTime">
@@ -102,9 +102,9 @@
                             </select>
                         </div>
                     </div>
-                    <div class="dg-modal-footer">
-                        <button class="dg-btn-cancel" @click="addVisible = false">取消</button>
-                        <button class="dg-btn-save" @click="saveAdd">儲存</button>
+                    <div class="modal-footer">
+                        <button class="btn-cancel" @click="addVisible = false">取消</button>
+                        <button class="btn-save" @click="saveAdd">儲存</button>
                     </div>
                 </div>
             </div>
@@ -893,92 +893,12 @@ export default {
 </script>
 
 <style lang="scss">
+@use '@/styles/index.scss' as *;
+
 .dhtmlx-gantt-wrapper {
     width: 100%;
     display: flex;
     flex-direction: column;
-}
-
-/* ── Toolbar（與 PlanGantt 共用相同 class）──*/
-.plan-gantt-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: #fff;
-    border-bottom: 1px solid #ddd;
-}
-
-.nav-spacer {
-    flex: 1;
-}
-
-.nav-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5em;
-    line-height: 1;
-    padding: 4px 12px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #f0f0f0;
-    text-decoration: none;
-    user-select: none;
-
-    &:hover { background: #e0e0e0; }
-
-    &.today-btn {
-        font-size: 0.95em;
-        height: 34px;
-        padding: 0 16px;
-        background: #1a6fd4;
-        color: #fff;
-        border-color: #1a6fd4;
-        &:hover { background: #155ab8; border-color: #155ab8; }
-    }
-
-    &.settings-btn {
-        font-size: 0.95em !important;
-        height: 34px !important;
-        padding: 0 14px !important;
-        background: #7b68ee !important;
-        color: #fff !important;
-        border-color: #7b68ee !important;
-        &:hover { background: #6c63d5 !important; border-color: #6c63d5 !important; }
-    }
-
-    &.add-btn {
-        font-size: 0.95em !important;
-        height: 34px !important;
-        padding: 0 16px !important;
-        background: #179b0b !important;
-        color: #fff !important;
-        border-color: #179b0b !important;
-        &:hover { background: #188d0d !important; border-color: #188d0d !important; }
-    }
-
-    &.disabled {
-        cursor: not-allowed;
-        opacity: 0.6;
-    }
-}
-
-.nav-timeinterval {
-    font-size: 0.9em;
-    align-self: end;
-}
-
-.nav-select {
-    height: 34px;
-    padding: 0 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #fff;
-    color: #333;
-    font-size: 0.9em;
 }
 
 /* ── Gantt 容器 ──*/
@@ -1016,179 +936,31 @@ export default {
     pointer-events: none;
 }
 
-.gantt-loading-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.62);
-    backdrop-filter: blur(1px);
-    z-index: 30;
-}
-
-.gantt-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #d7d7d7;
-    border-top-color: #1a6fd4;
-    border-radius: 50%;
-    animation: gantt-spin 0.8s linear infinite;
-}
-
-@keyframes gantt-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.loading-fade-enter-active,
-.loading-fade-leave-active {
-    transition: opacity 0.2s ease;
-}
-
-.loading-fade-enter,
-.loading-fade-leave-to {
-    opacity: 0;
-}
-
-.no-data-panel {
-    height: 350px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 600;
-    background: #cecece20;
-    border: 1px solid #e0e0e0;
-
-    span {
-        font-size: 1.5em;
-        font-weight: 900;
-        color: #999999;
-    }
-}
-
-/* ── Modal 共用 ── */
-.dg-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    z-index: 10001;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
-.modal-fade-enter, .modal-fade-leave-to { opacity: 0; }
-.modal-fade-enter-active .dg-modal-dialog,
-.modal-fade-leave-active .dg-modal-dialog { transition: transform 0.22s ease, opacity 0.22s ease; }
-.modal-fade-enter .dg-modal-dialog,
-.modal-fade-leave-to .dg-modal-dialog { transform: translateY(10px) scale(0.98); opacity: 0; }
-
-.dg-modal-dialog {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+.modal-dialog {
     width: 480px;
-    max-width: 95vw;
-    display: flex;
-    flex-direction: column;
     max-height: 90vh;
 }
 
-.dg-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px 12px;
-    border-bottom: 1px solid #eee;
-    font-size: 1.05em;
-    font-weight: 700;
-    color: #222;
-}
-
-.dg-modal-close {
-    background: none;
-    border: none;
-    font-size: 1.1em;
-    cursor: pointer;
-    color: #888;
-    padding: 2px 6px;
-    border-radius: 4px;
-    &:hover { background: #f0f0f0; color: #333; }
-}
-
-.dg-modal-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
+.modal-body {
     gap: 16px;
-    overflow-y: auto;
 }
 
-.dg-form-row {
-    display: flex;
-    align-items: center;
+.form-row {
     gap: 10px;
 
-    label {
-        width: 110px;
-        flex-shrink: 0;
-        font-size: 0.9em;
-        color: #555;
-        font-weight: 500;
+    input[type="date"] {
+        flex: 1.5;
     }
 
-    select, input[type="text"], input[type="date"] {
-        flex: 1;
+    input[type="text"],
+    input[type="date"],
+    select {
         height: 34px;
         padding: 0 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 0.9em;
-        background: #fff;
-        &:focus { outline: none; border-color: #1a6fd4; box-shadow: 0 0 0 2px rgba(26,111,212,0.15); }
     }
-
-    input[type="date"] { flex: 1.5; }
 }
 
-.dg-hint {
-    color: #999;
-    font-size: 0.82em;
-    white-space: nowrap;
-}
-
-.dg-modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 12px 20px 16px;
-    border-top: 1px solid #eee;
+.modal-footer {
     flex-shrink: 0;
-}
-
-.dg-btn-cancel {
-    padding: 7px 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background: #f5f5f5;
-    cursor: pointer;
-    font-size: 0.9em;
-    &:hover { background: #e8e8e8; }
-}
-
-.dg-btn-save {
-    padding: 7px 22px;
-    border: none;
-    border-radius: 5px;
-    background: #1a6fd4;
-    color: #fff;
-    cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 600;
-    &:hover { background: #155ab8; }
 }
 </style>

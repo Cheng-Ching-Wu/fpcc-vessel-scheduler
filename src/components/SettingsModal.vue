@@ -303,45 +303,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    z-index: 10001;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-    transition: opacity 0.2s ease;
-}
-
-.modal-fade-enter,
-.modal-fade-leave-to {
-    opacity: 0;
-}
-
-.modal-fade-enter-active .modal-dialog,
-.modal-fade-leave-active .modal-dialog {
-    transition: transform 0.22s ease, opacity 0.22s ease;
-}
-
-.modal-fade-enter .modal-dialog,
-.modal-fade-leave-to .modal-dialog {
-    transform: translateY(10px) scale(0.98);
-    opacity: 0;
-}
+@use '@/styles/index.scss' as *;
 
 .modal-dialog {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.22);
     width: 700px;
-    max-width: 95vw;
-    display: flex;
-    flex-direction: column;
     max-height: 90vh;
 }
 
@@ -349,38 +314,8 @@ export default {
     width: 800px;
 }
 
-.modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px 12px;
-    border-bottom: 1px solid #eee;
-    font-size: 1.05em;
-    font-weight: 700;
-    color: #222;
-}
-
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 1.1em;
-    cursor: pointer;
-    color: #888;
-    line-height: 1;
-    padding: 2px 4px;
-    border-radius: 4px;
-    &:hover { 
-        background: #f0f0f0; 
-        color: #333; 
-    }
-}
-
 .modal-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
     gap: 20px;
-    overflow-y: auto;
 }
 
 .settings-body {
@@ -402,30 +337,14 @@ export default {
 }
 
 .form-row {
-    display: flex;
-    align-items: center;
     gap: 12px;
-    
+
     label {
         width: 110px;
-        flex-shrink: 0;
-        font-size: 0.9em;
-        color: #555;
-        font-weight: 500;
     }
-    
+
     select {
         flex: 0 0 auto;
-        padding: 6px 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        background: #fff;
-        font-size: 0.9em;
-        &:focus { 
-            outline: none; 
-            border-color: #1a6fd4; 
-            box-shadow: 0 0 0 2px rgba(26,111,212,0.15); 
-        }
     }
 }
 
@@ -646,43 +565,7 @@ export default {
     }
 }
 
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 12px 20px 16px;
-    border-top: 1px solid #eee;
-}
-
 .settings-footer {
     flex-shrink: 0;
-}
-
-.btn-cancel {
-    padding: 7px 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background: #f5f5f5;
-    cursor: pointer;
-    font-size: 0.9em;
-    
-    &:hover { 
-        background: #e8e8e8; 
-    }
-}
-
-.btn-save {
-    padding: 7px 22px;
-    border: none;
-    border-radius: 5px;
-    background: #1a6fd4;
-    color: #fff;
-    cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 600;
-    
-    &:hover { 
-        background: #155ab8; 
-    }
 }
 </style>

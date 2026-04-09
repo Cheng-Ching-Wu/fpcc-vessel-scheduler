@@ -1,0 +1,83 @@
+@use './variables' as *;
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: $color-overlay-bg;
+  z-index: $z-modal;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-fade-enter,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-active .modal-dialog,
+.modal-fade-leave-active .modal-dialog {
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.modal-fade-enter .modal-dialog,
+.modal-fade-leave-to .modal-dialog {
+  transform: translateY(10px) scale(0.98);
+  opacity: 0;
+}
+
+.modal-dialog {
+  background: $color-white;
+  border-radius: $border-radius-lg;
+  box-shadow: $modal-shadow;
+  max-width: 95vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid $color-border-light;
+  font-size: 1.05em;
+  font-weight: 700;
+  color: $color-text-strong;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  cursor: pointer;
+  color: $color-text-hint;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+
+  &:hover {
+    background: $color-bg-hover;
+    color: $color-text;
+  }
+}
+
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid $color-border-light;
+}

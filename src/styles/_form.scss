@@ -1,0 +1,53 @@
+@use './variables' as *;
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  label {
+    width: 110px;
+    flex-shrink: 0;
+    font-size: 0.9em;
+    color: $color-text-muted;
+    font-weight: 500;
+  }
+
+  input,
+  select {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    border: 1px solid $color-border;
+    border-radius: 5px;
+    font-size: 0.9em;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+      box-shadow: $focus-ring;
+    }
+  }
+
+  select {
+    background: $color-bg-input;
+  }
+
+  input[type="text"],
+  input[type="date"] {
+    height: 34px;
+    background: $color-bg-input;
+  }
+
+  input:disabled,
+  select:disabled {
+    background: $color-bg-subtle;
+    color: $color-disabled;
+  }
+}
+
+.form-hint {
+  color: $color-text-faded;
+  font-size: 0.82em;
+  white-space: nowrap;
+}

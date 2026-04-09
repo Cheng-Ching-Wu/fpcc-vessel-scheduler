@@ -1,0 +1,68 @@
+@use './variables' as *;
+
+.plan-gantt-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: $color-white;
+  border-bottom: 1px solid $color-border-medium;
+}
+
+.nav-spacer {
+  flex: 1;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5em;
+  line-height: 1;
+  padding: 4px 12px;
+  cursor: pointer;
+  border: 1px solid $color-border;
+  border-radius: 4px;
+  background: $color-bg-hover;
+  text-decoration: none;
+  user-select: none;
+
+  &:hover {
+    background: $color-bg-hover-soft;
+  }
+
+  &.today-btn {
+    font-size: 0.95em;
+    height: 34px;
+    padding: 0 16px;
+    background: $color-primary;
+    color: $color-white;
+    border-color: $color-primary;
+
+    &:hover {
+      background: $color-primary-hover;
+      border-color: $color-primary-hover;
+    }
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.nav-timeinterval {
+  font-size: 0.9em;
+  align-self: end;
+}
+
+.nav-select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid $color-border;
+  border-radius: 4px;
+  background: $color-white;
+  color: $color-text;
+  font-size: 0.9em;
+}

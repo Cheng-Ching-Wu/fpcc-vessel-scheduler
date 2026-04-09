@@ -36,12 +36,8 @@ export default {
 }
 </script>
 
-<style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+<style lang="scss">
+@use '@/styles/index.scss' as *;
 
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;

@@ -1,0 +1,72 @@
+@use './variables' as *;
+
+.btn-cancel {
+  padding: 7px 20px;
+  border: 1px solid $color-border;
+  border-radius: 5px;
+  background: $color-bg-subtle;
+  cursor: pointer;
+  font-size: 0.9em;
+
+  &:hover {
+    background: $color-bg-hover-strong;
+  }
+}
+
+.btn-save {
+  padding: 7px 22px;
+  border: none;
+  border-radius: 5px;
+  background: $color-primary;
+  color: $color-white;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+
+  &:hover {
+    background: $color-primary-hover;
+  }
+}
+
+.btn-danger {
+  padding: 7px 22px;
+  border: none;
+  border-radius: 5px;
+  background: $color-danger;
+  color: $color-white;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+
+  &:hover {
+    background: $color-danger-hover;
+  }
+}
+
+.add-btn {
+  font-size: 0.95em !important;
+  height: 34px !important;
+  padding: 0 16px !important;
+  background: $color-success !important;
+  color: $color-white !important;
+  border-color: $color-success !important;
+
+  &:hover {
+    background: $color-success-hover !important;
+    border-color: $color-success-hover !important;
+  }
+}
+
+.settings-btn {
+  font-size: 0.95em !important;
+  height: 34px !important;
+  padding: 0 14px !important;
+  background: $color-accent !important;
+  color: $color-white !important;
+  border-color: $color-accent !important;
+
+  &:hover {
+    background: $color-accent-hover !important;
+    border-color: $color-accent-hover !important;
+  }
+}
