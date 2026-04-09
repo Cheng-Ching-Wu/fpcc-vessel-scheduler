@@ -441,9 +441,8 @@ export default {
                 const res = await berthApiService.getBerthActivities()
                 const rows = this.extractRows(res)
                 this.activities = this.mapBerthActivitiesResponse(rows)
-            } catch (err) {
+            } catch {
                 this.apiLoadFailed = true
-                console.error('載入 berth-activities 失敗：', err)
                 this.activities = []
             }
         },
@@ -452,9 +451,8 @@ export default {
                 const res = await berthApiService.getBlockedRanges()
                 const rows = this.extractRows(res)
                 this.blockedRanges = this.mapBlockedRangesResponse(rows)
-            } catch (err) {
+            } catch {
                 this.apiLoadFailed = true
-                console.error('載入 blocked-ranges 失敗：', err)
                 this.blockedRanges = []
             }
         },
