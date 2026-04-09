@@ -303,7 +303,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@use '@/styles/index.scss' as *;
 
 .modal-dialog {
     width: 700px;
@@ -323,17 +322,17 @@ export default {
 }
 
 .settings-section {
-    border: 1px solid #eee;
+    border: 1px solid $color-border-light;
     border-radius: 8px;
     padding: 16px;
-    background: #fafafa;
+    background: $color-bg-card;
 }
 
 .settings-section-title {
     margin: 0 0 12px;
     font-size: 1em;
     font-weight: 600;
-    color: #333;
+    color: $color-text;
 }
 
 .form-row {
@@ -353,7 +352,7 @@ export default {
 }
 
 .time-interval-hint {
-    color: #888;
+    color: $color-text-hint;
     font-size: 0.85em;
     margin-left: auto;
 }
@@ -372,22 +371,22 @@ export default {
     align-items: center;
     margin-bottom: 12px;
     padding: 8px 0;
-    border-top: 2px solid #ddd;
+    border-top: 2px solid $color-border-medium;
 }
 
 .vessel-name-input {
     flex: 1;
     padding: 8px 10px;
-    border: 1px solid #ccc;
+    border: 1px solid $color-border;
     border-radius: 4px;
     font-size: 0.95em;
     font-weight: 600;
-    color: #333;
+    color: $color-text;
     
     &:focus {
         outline: none;
-        border-color: #1a6fd4;
-        box-shadow: 0 0 0 2px rgba(26,111,212,0.15);
+        border-color: $color-primary;
+        box-shadow: $focus-ring;
     }
 }
 
@@ -405,16 +404,16 @@ export default {
 
 .btn-add-activity {
     padding: 6px 12px;
-    border: 1px solid #1a6fd4;
+    border: 1px solid $color-primary;
     border-radius: 4px;
-    background: #f3f8ff;
-    color: #1a6fd4;
+    background: $color-bg-primary-light;
+    color: $color-primary;
     cursor: pointer;
     font-size: 0.85em;
     font-weight: 600;
 
     &:hover {
-        background: #e6f0ff;
+        background: $color-bg-primary-hover;
     }
 }
 
@@ -423,24 +422,24 @@ export default {
     align-items: center;
     gap: 12px;
     padding: 8px;
-    background: #fff;
+    background: $color-white;
     border-radius: 4px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid $color-border-soft;
 }
 
 .btn-remove-activity {
     flex: 0 0 auto;
     padding: 6px 10px;
-    border: 1px solid #d9534f;
+    border: 1px solid $color-danger-border;
     border-radius: 4px;
-    background: #fff5f5;
-    color: #b9403b;
+    background: $color-bg-danger-light;
+    color: $color-danger-text;
     cursor: pointer;
     font-size: 0.82em;
     font-weight: 600;
 
     &:hover {
-        background: #ffeaea;
+        background: $color-bg-danger-hover;
     }
 }
 
@@ -451,14 +450,14 @@ export default {
 .activity-name-input {
     width: 100%;
     padding: 6px 8px;
-    border: 1px solid #ccc;
+    border: 1px solid $color-border;
     border-radius: 4px;
     font-size: 0.9em;
     
     &:focus {
         outline: none;
-        border-color: #1a6fd4;
-        box-shadow: 0 0 0 2px rgba(26,111,212,0.15);
+        border-color: $color-primary;
+        box-shadow: $focus-ring;
     }
 }
 
@@ -477,7 +476,7 @@ export default {
     label {
         flex: 0 0 45px;
         font-size: 0.8em;
-        color: #666;
+        color: $color-text-secondary;
         font-weight: 500;
     }
 }
@@ -485,15 +484,15 @@ export default {
 .color-input {
     flex: 1;
     padding: 6px 8px;
-    border: 1px solid #ccc;
+    border: 1px solid $color-border;
     border-radius: 4px;
     font-size: 0.8em;
     font-family: 'Courier New', monospace;
     
     &:focus {
         outline: none;
-        border-color: #1a6fd4;
-        box-shadow: 0 0 0 2px rgba(26,111,212,0.15);
+        border-color: $color-primary;
+        box-shadow: $focus-ring;
     }
     
     &.hex-input {
@@ -502,8 +501,8 @@ export default {
 }
 
 .fill-readonly {
-    background: #f5f5f5;
-    color: #999;
+    background: $color-bg-subtle;
+    color: $color-text-faded;
     cursor: default;
 }
 
@@ -511,9 +510,9 @@ export default {
     width: 34px;
     height: 28px;
     padding: 0;
-    border: 1px solid #ccc;
+    border: 1px solid $color-border;
     border-radius: 4px;
-    background: #fff;
+    background: $color-white;
     cursor: pointer;
 }
 
@@ -525,7 +524,7 @@ export default {
     width: 34px;
     text-align: right;
     font-size: 0.78em;
-    color: #666;
+    color: $color-text-secondary;
     font-family: 'Courier New', monospace;
 }
 
@@ -533,7 +532,7 @@ export default {
     flex: 0 0 36px;
     height: 28px;
     border-radius: 3px;
-    border: 1px solid #ddd;
+    border: 1px solid $color-border-medium;
     overflow: hidden;
     
     div {
@@ -550,18 +549,18 @@ export default {
 
 .btn-reset {
     padding: 8px 20px;
-    border: 1px solid #ddd;
+    border: 1px solid $color-border-medium;
     border-radius: 5px;
-    background: #fff;
-    color: #666;
+    background: $color-white;
+    color: $color-text-secondary;
     cursor: pointer;
     font-size: 0.9em;
     font-weight: 500;
     
     &:hover {
-        background: #f5f5f5;
-        border-color: #ccc;
-        color: #333;
+        background: $color-bg-subtle;
+        border-color: $color-border;
+        color: $color-text;
     }
 }
 

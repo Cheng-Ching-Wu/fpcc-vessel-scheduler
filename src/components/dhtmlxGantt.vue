@@ -892,8 +892,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
-@use '@/styles/index.scss' as *;
+<style lang="scss" scoped>
 
 .dhtmlx-gantt-wrapper {
     width: 100%;
@@ -922,7 +921,7 @@ export default {
 
 /* 每天起始格加粗左邊框 */
 .gantt_task_cell.day-start {
-    border-left: 1px solid #888 !important;
+    border-left: 1px solid $color-text-hint !important;
 }
 
 /* 封鎖時段：紅色框遮罩 */

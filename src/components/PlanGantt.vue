@@ -1283,7 +1283,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@use '@/styles/index.scss' as *;
 
 .plan-gantt-wrapper {
     width: 100%;
@@ -1297,8 +1296,8 @@ export default {
     display: flex;
     gap: 20px;
     padding: 12px 16px;
-    background: #f5f5f5;
-    border-bottom: 1px solid #ddd;
+    background: $color-bg-subtle;
+    border-bottom: 1px solid $color-border-medium;
     flex-wrap: wrap;
     align-items: center;
 }
@@ -1306,7 +1305,7 @@ export default {
 .nav-label {
     font-size: 0.9375em;
     font-weight: 600;
-    color: #5a5a5a;
+    color: $color-text-subtle;
     min-width: 160px;
     text-align: center;
 }
@@ -1327,7 +1326,7 @@ export default {
 }
 
 .legend-label {
-    color: #333;
+    color: $color-text;
     font-weight: 500;
 }
 
@@ -1362,11 +1361,11 @@ export default {
 /* 表頭：向右偏移並確保左側背景為白色 */
 .plan-gantt .gantt_grid_head_cell {
     padding: 0 26px !important;
-    background: #fff !important;
+    background: $color-white !important;
 }
 
 .gantt_task_cell.day-start {
-    border-left: 1px solid #888 !important;
+    border-left: 1px solid $color-text-hint !important;
 }
 
 :deep(.custom-act-bar) {
@@ -1402,10 +1401,10 @@ export default {
 /* ── 右鍵選單 ── */
 .context-menu {
     position: fixed;
-    background: #fff;
-    border: 1px solid #ddd;
+    background: $color-white;
+    border: 1px solid $color-border-medium;
     border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    box-shadow: $context-shadow;
     z-index: 10000;
     min-width: 120px;
     overflow: hidden;
@@ -1416,9 +1415,9 @@ export default {
     font-size: 0.9375em;
     cursor: pointer;
     white-space: nowrap;
-    &:hover { background: #f0f4ff; }
-    &--danger { color: #c0392b;
-        &:hover { background: #fff0f0; }
+    &:hover { background: $color-bg-menu-hover; }
+    &--danger { color: $color-danger;
+        &:hover { background: $color-bg-danger-menu; }
     }
 }
 
@@ -1440,7 +1439,7 @@ export default {
 }
 .delete-confirm-body {
     font-size: 0.95em;
-    color: #333;
+    color: $color-text;
 }
 .delete-info-line {
     margin-top: 8px;

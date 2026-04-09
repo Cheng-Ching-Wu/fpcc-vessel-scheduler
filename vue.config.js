@@ -1,6 +1,16 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
   transpileDependencies: true,
+  css: {
+    loaderOptions: {
+      sass: {
+        additionalData: `@use '@/styles/variables' as *;`,
+      },
+      scss: {
+        additionalData: `@use '@/styles/variables' as *;`,
+      },
+    },
+  },
   publicPath: process.env.NODE_ENV === 'production'
     ? '/Gantt_Demo/'  // 例如 '/my-vue-app/'
     : '/',
