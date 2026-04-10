@@ -699,7 +699,7 @@ export default {
                                     }
                                     const newTask = gantt.getTaskByIndex(targetIdx)
 
-                    if (newTask && newTask.id !== taskId) {
+                                    if (newTask && newTask.id !== taskId) {
                                         // 跨列：更新 act 的 vessel/activity 資訊（act 仍在 ACTIVITIES 中，不需搬移）
                                         const srcOtherActs = getActsForTask(taskId).filter(a => a !== act)
                                         act.vesselPrefix   = newTask.vesselPrefix

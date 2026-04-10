@@ -19,7 +19,7 @@
         <div class="dhtmlx-gantt" :class="{ 'loading-state': isLoading }">
             <div ref="dhtmlxGantt" class="dhtmlx-gantt-host" v-show="!hasNoWeekData" style="width: 100%;"></div>
             <div v-if="hasNoWeekData && !isLoading" class="no-data-panel">
-                <span class="material-symbols-outlined no-data-icon">anchor</span>
+                <span class="material-symbols-outlined no-data-icon">database_off</span>
                 <span class="no-data-string">暫無資料</span>
             </div>
             <transition name="loading-fade">

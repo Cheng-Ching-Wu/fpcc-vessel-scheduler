@@ -285,6 +285,7 @@ const RAW_ICONS = [
   'memory',
   'storage',
   'database',
+  'database_off',
   'dns',
   'cloud',
   'cloud_done',
