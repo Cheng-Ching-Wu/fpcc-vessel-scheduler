@@ -141,6 +141,14 @@ const ROW_TYPE_META = {
 
 export default {
     name: 'DhtmlxGantt',
+    watch: {
+        isOnline(newVal, oldVal) {
+            // 網路恢復（offline → online）且非載入中，自動重撈資料
+            if (!oldVal && newVal && !this.isLoading) {
+                this._applyWeek()
+            }
+        },
+    },
     data() {
         return {
             currentWeekStart: null,
@@ -168,6 +176,9 @@ export default {
         }
     },
     computed: {
+        isOnline() {
+            return this.$store.getters['network/isOnline']
+        },
         yearOptions() {
             const base = this.currentWeekStart
                 ? this.currentWeekStart.getFullYear()

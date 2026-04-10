@@ -15,6 +15,12 @@
           </router-link>
         </li>
       </ul>
+      <div class="network-status" :class="{ offline: !isOnline, checking: isChecking }">
+        <span class="status-dot"></span>
+        <span class="status-label">
+          {{ isChecking ? '確認中…' : isOnline ? '伺服器連線中' : `無法連線至 API 伺服器 (${countdown}s)` }}
+        </span>
+      </div>
     </nav>
     <main class="main-content" :class="{ expanded: isCollapsed }">
       <router-view />
@@ -23,8 +29,13 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 export default {
   name: 'App',
+  computed: {
+    ...mapGetters('network', ['isOnline', 'isChecking', 'countdown']),
+  },
   data() {
     return {
       isCollapsed: false,
@@ -126,6 +137,56 @@ export default {
 
 .sidebar.collapsed .nav-label {
   display: none;
+}
+
+.network-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin-top: auto;
+  border-top: 1px solid #3d5166;
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: #4caf50;
+    transition: background-color 0.3s ease;
+  }
+
+  .status-label {
+    font-size: 12px;
+    color: #aab;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: color 0.3s ease;
+  }
+
+  &.offline {
+    .status-dot { background-color: #f44336; }
+    .status-label { color: #f44336; }
+  }
+
+  &.checking {
+    .status-dot {
+      background-color: #ff9800;
+      animation: pulse 1s ease-in-out infinite;
+    }
+  }
+}
+
+.sidebar.collapsed .network-status {
+  justify-content: center;
+  padding: 10px 0;
+
+  .status-label { display: none; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 .main-content {
