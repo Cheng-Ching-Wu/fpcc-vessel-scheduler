@@ -12,7 +12,7 @@ module.exports = defineConfig({
     },
   },
   publicPath: process.env.NODE_ENV === 'production'
-    ? '/Gantt_Demo/'  // 例如 '/my-vue-app/'
+    ? '/fpcc-vessel-scheduler/'
     : '/',
   devServer: {
     proxy: {
