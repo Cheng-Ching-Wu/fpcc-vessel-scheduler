@@ -539,20 +539,27 @@ export default {
                             // 追蹤目前拖曳位移（用於 tooltip 計算）
                             let currentDx = 0, currentDy = 0
 
-                            // 建立幽靈 bar（顯示拖曳後的預期位置）
+                            // 建立幽靈 bar（move / resize 皆顯示預覽，bar 本身拖曳中不改變）
+                            const liveDataArea = document.querySelector('.gantt_data_area')
                             let ghostBar = null
-                            if (type === 'move') {
+                            if (liveDataArea) {
                                 ghostBar = document.createElement('div')
-                                ghostBar.className = 'custom-act-bar custom-act-bar-ghost'
+                                ghostBar.className = 'custom-act-bar-ghost'
                                 ghostBar.style.cssText = `
+                                    position:absolute;
                                     left:${startLeft}px;
-                                    width:${Math.max(parseFloat(bar.style.width), 30)}px;
+                                    width:${startW}px;
                                     top:${startTop}px;
                                     height:${parseFloat(bar.style.height)}px;
                                     background:${typeColor};
-                                    border:2px solid ${typeBorder};
+                                    border:2px dashed ${typeBorder};
+                                    opacity:0.5;
+                                    z-index:6;
+                                    pointer-events:none;
+                                    border-radius:2px;
+                                    box-sizing:border-box;
                                 `
-                                dataArea.appendChild(ghostBar)
+                                liveDataArea.appendChild(ghostBar)
                             }
 
                             if (type === 'move') bar.style.cursor = 'grabbing'
@@ -563,16 +570,18 @@ export default {
                             document.body.appendChild(tooltip)
 
                             const updateTooltip = () => {
+                                // 拖曳中 bar 本身不改變，從原始值 + 位移計算當前預期位置
                                 let curLeft, curW
-                                
                                 if (type === 'move') {
-                                    // 拖曳中 bar 位置不變，使用預期位置計算
                                     curLeft = snapPx(startLeft + currentDx)
-                                    curW = parseFloat(bar.style.width)
+                                    curW = startW
+                                } else if (type === 'resize-right') {
+                                    curLeft = startLeft
+                                    curW = Math.max(snapPx(startLeft + startW + currentDx) - startLeft, minW)
                                 } else {
-                                    // resize 操作直接讀取 bar 當前位置
-                                    curLeft = parseFloat(bar.style.left)
-                                    curW = parseFloat(bar.style.width)
+                                    // resize-left
+                                    curLeft = snapPx(startLeft + currentDx)
+                                    curW = Math.max((startLeft + startW) - curLeft, minW)
                                 }
                                 
                                 let newStart, newEnd
@@ -628,13 +637,17 @@ export default {
                                         ghostBar.style.left = snapPx(startLeft + dx) + 'px'
                                     }
                                 } else if (type === 'resize-right') {
-                                    const newRight = snapPx(startLeft + startW + dx)
-                                    bar.style.width = Math.max(newRight - startLeft, minW) + 'px'
+                                    if (ghostBar) {
+                                        const newRight = snapPx(startLeft + startW + dx)
+                                        ghostBar.style.width = Math.max(newRight - startLeft, minW) + 'px'
+                                    }
                                 } else if (type === 'resize-left') {
-                                    const newLeft = snapPx(startLeft + dx)
-                                    const newW    = Math.max((startLeft + startW) - newLeft, minW)
-                                    bar.style.left  = newLeft + 'px'
-                                    bar.style.width = newW + 'px'
+                                    if (ghostBar) {
+                                        const newLeft = snapPx(startLeft + dx)
+                                        const newW    = Math.max((startLeft + startW) - newLeft, minW)
+                                        ghostBar.style.left  = newLeft + 'px'
+                                        ghostBar.style.width = newW + 'px'
+                                    }
                                 }
                                 updateTooltip()
                             }
@@ -649,7 +662,7 @@ export default {
 
                                 // 回寫資料
                                 let finalLeft, finalW
-                                
+
                                 if (type === 'move') {
                                     // move 拖曳中 bar 位置未改，使用預期最終位置
                                     finalLeft = snapPx(startLeft + currentDx)
@@ -1404,13 +1417,14 @@ export default {
     border-left: 9px solid var(--bar-border-color);
 }
 
-/* 縮放把手 */
+/* 縮放把手：平時寬度縮小，hover 時才擴展 */
 :deep(.bar-resize-handle) {
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 8px;
+    width: 4px;
     z-index: 7;
+    transition: width 0.1s;
 }
 
 :deep(.bar-resize-left) {
@@ -1421,6 +1435,10 @@ export default {
 :deep(.bar-resize-right) {
     right: 0;
     cursor: e-resize;
+}
+
+:deep(.custom-act-bar:hover .bar-resize-handle) {
+    width: 8px;
 }
 
 /* 跨週裁切指示器：裁切側移除邊框與圓角 */
